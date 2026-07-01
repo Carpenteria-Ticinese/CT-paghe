@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paghe — Registrazione</title>
+<style>
+  :root { --blu:#1f6fb2; --bg:#f4f6f8; --bord:#d9dee3; --txt:#1c2733; --muted:#667; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--txt); font-size:16px; }
+  header { background:var(--blu); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { font-size:18px; margin:0; }
+  header button { background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  main { max-width:820px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border:1px solid var(--bord); border-radius:10px; padding:16px; margin-bottom:16px; }
+  label { display:block; font-weight:600; font-size:14px; margin:8px 0 4px; }
+  input, select { width:100%; padding:9px 10px; border:1px solid var(--bord); border-radius:8px; font-size:16px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; }
+  .row > div { flex:1; min-width:120px; }
+  .btn { background:var(--blu); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; }
+  .btn.sec { background:#eef2f6; color:var(--blu); border:1px solid var(--bord); }
+  .btn.danger { background:#c0392b; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--bord); font-size:14px; }
+  th { color:var(--muted); font-weight:600; }
+  td.num, th.num { text-align:right; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.aperto { background:#e7f5ea; color:#1e7d34; }
+  .badge.chiuso { background:#fdecea; color:#c0392b; }
+  .tot { font-size:20px; font-weight:800; }
+  .muted { color:var(--muted); font-size:13px; }
+  .hidden { display:none; }
+  .msg { padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:14px; }
+  .msg.err { background:#fdecea; color:#c0392b; }
+  .msg.ok { background:#e7f5ea; color:#1e7d34; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Paghe · Registrazione</h1>
+  <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
+</header>
+<main>
+
+  <!-- LOGIN -->
+  <div id="authCard" class="card hidden">
+    <label>Email</label>
+    <input id="email" type="email" autocomplete="username">
+    <label>Password</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <div style="margin-top:12px"><button class="btn" onclick="login()">Entra</button></div>
+    <div id="authMsg"></div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Operaio</label>
+          <select id="selOperaio"></select>
+        </div>
+        <div style="max-width:110px">
+          <label>Anno</label>
+          <input id="inAnno" type="number" step="1">
+        </div>
+        <div style="max-width:140px">
+          <label>Mese</label>
+          <select id="selMese"></select>
+        </div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" onclick="apriPeriodo()">Apri periodo</button></div>
+    </div>
+
+    <div id="periodoCard" class="card hidden">
+      <div id="msgBox"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><strong id="periodoTitolo"></strong> <span id="periodoStato"></span></div>
+        <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th><th>Descrizione</th><th class="num">Quantità</th><th>UM</th><th class="num">Importo (CHF)</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="vociBody"></tbody>
+      </table>
+
+      <div style="margin-top:8px; text-align:right;">
+        Totale lordo: <span id="totale" class="tot">0,00</span> CHF
+      </div>
+
+      <div id="addBox" style="margin-top:16px; border-top:1px solid var(--bord); padding-top:12px;">
+        <div class="row">
+          <div>
+            <label>Tipo</label>
+            <select id="vTipo">
+              <option value="ore_ordinarie">Ore ordinarie</option>
+              <option value="straordinari">Straordinari</option>
+              <option value="indennita_trasferta">Indennità trasferta</option>
+              <option value="salario_mensile">Salario mensile</option>
+              <option value="tredicesima">13ª</option>
+              <option value="premio">Premio</option>
+              <option value="assenza">Assenza</option>
+              <option value="correzione">Correzione</option>
+              <option value="altro">Altro</option>
+            </select>
+          </div>
+          <div><label>Descrizione</label><input id="vDesc" type="text"></div>
+        </div>
+        <div class="row" style="margin-top:4px">
+          <div style="max-width:130px"><label>Quantità</label><input id="vQta" type="number" step="0.01"></div>
+          <div style="max-width:100px"><label>UM</label><input id="vUm" type="text" placeholder="h / CHF"></div>
+          <div style="max-width:150px"><label>Importo CHF</label><input id="vImp" type="number" step="0.01"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" onclick="addVoce()">Aggiungi voce</button></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = "https://wgidgbauhivdctdxfjnk.supabase.co";
+const SUPA_KEY = "sb_publishable_Ke7MTQGHPYVXvKInfOrUQQ_Ys6qKJvD";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let periodo = null;   // riga tm_paghe_periodo corrente
+let voci = [];        // voci del periodo
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function msg(text, ok) {
+  $("msgBox").innerHTML = text ? `<div class="msg ${ok ? "ok" : "err"}">${text}</div>` : "";
+}
+
+// ---- AUTH ----
+async function checkAuth() {
+  try {
+    const { data } = await sb.auth.getSession();
+    if (data.session) { showApp(); } else { showLogin(); }
+  } catch (e) { showLogin(); }
+}
+function showLogin() { $("authCard").classList.remove("hidden"); $("app").classList.add("hidden"); $("btnLogout").classList.add("hidden"); }
+function showApp() {
+  $("authCard").classList.add("hidden"); $("app").classList.remove("hidden"); $("btnLogout").classList.remove("hidden");
+  initControls(); loadOperai();
+}
+async function login() {
+  $("authMsg").innerHTML = "";
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+    if (error) { $("authMsg").innerHTML = `<div class="msg err">${error.message}</div>`; return; }
+    showApp();
+  } catch (e) { $("authMsg").innerHTML = `<div class="msg err">Errore di accesso</div>`; }
+}
+async function logout() { try { await sb.auth.signOut(); } catch (e) {} showLogin(); }
+
+// ---- CONTROLS ----
+function initControls() {
+  const now = new Date();
+  $("inAnno").value = now.getFullYear();
+  const mesi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  $("selMese").innerHTML = mesi.map((m, i) => `<option value="${i + 1}" ${i === now.getMonth() ? "selected" : ""}>${m}</option>`).join("");
+}
+async function loadOperai() {
+  try {
+    const { data, error } = await sb.from("operai").select("id,nome,cognome").eq("attivo", true).order("cognome");
+    if (error) throw error;
+    $("selOperaio").innerHTML = (data || []).map(o => `<option value="${o.id}">${o.cognome || ""} ${o.nome || ""}</option>`).join("");
+  } catch (e) {
+    $("selOperaio").innerHTML = `<option value="">Errore nel caricare gli operai</option>`;
+  }
+}
+
+// ---- PERIODO ----
+async function apriPeriodo() {
+  const operaio_id = $("selOperaio").value;
+  const anno = parseInt($("inAnno").value, 10);
+  const mese = parseInt($("selMese").value, 10);
+  if (!operaio_id || !anno || !mese) { alert("Seleziona operaio, anno e mese."); return; }
+  try {
+    const { data, error } = await sb.from("tm_paghe_periodo")
+      .upsert({ operaio_id, anno, mese }, { onConflict: "operaio_id,anno,mese" })
+      .select().single();
+    if (error) throw error;
+    periodo = data;
+    await renderPeriodo();
+  } catch (e) {
+    alert("Errore nell'aprire il periodo: " + (e.message || e));
+  }
+}
+
+async function renderPeriodo() {
+  $("periodoCard").classList.remove("hidden");
+  msg("");
+  const nomeOp = $("selOperaio").options[$("selOperaio").selectedIndex]?.text || "";
+  $("periodoTitolo").textContent = `${nomeOp} — ${$("selMese").options[$("selMese").selectedIndex].text} ${periodo.anno}`;
+  const chiuso = periodo.stato === "chiuso";
+  $("periodoStato").innerHTML = `<span class="badge ${chiuso ? "chiuso" : "aperto"}">${chiuso ? "CHIUSO" : "APERTO"}</span>`;
+  $("btnStato").textContent = chiuso ? "Riapri periodo" : "Chiudi periodo";
+  $("addBox").style.display = chiuso ? "none" : "block";
+  await loadVoci();
+}
+
+// ---- VOCI ----
+async function loadVoci() {
+  try {
+    const { data, error } = await sb.from("tm_paghe_voce").select("*").eq("periodo_id", periodo.id).order("created_at");
+    if (error) throw error;
+    voci = data || [];
+    renderVoci();
+  } catch (e) {
+    msg("Errore nel caricare le voci: " + (e.message || e), false);
+  }
+}
+
+function renderVoci() {
+  const chiuso = periodo.stato === "chiuso";
+  $("vociBody").innerHTML = voci.map(v => `
+    <tr>
+      <td>${labelTipo(v.tipo)}</td>
+      <td>${v.descrizione || ""}</td>
+      <td class="num">${v.quantita != null ? fmt(v.quantita) : ""}</td>
+      <td>${v.um || ""}</td>
+      <td class="num">${v.importo != null ? fmt(v.importo) : ""}</td>
+      <td class="num">${chiuso ? "" : `<button class="btn danger" style="padding:4px 8px" onclick="deleteVoce('${v.id}')">✕</button>`}</td>
+    </tr>`).join("");
+  const tot = voci.reduce((s, v) => s + (Number(v.importo) || 0), 0);
+  $("totale").textContent = fmt(tot);
+}
+
+function labelTipo(t) {
+  const map = { ore_ordinarie:"Ore ordinarie", straordinari:"Straordinari", indennita_trasferta:"Indennità trasferta", salario_mensile:"Salario mensile", tredicesima:"13ª", premio:"Premio", assenza:"Assenza", correzione:"Correzione", altro:"Altro" };
+  return map[t] || t;
+}
+
+async function addVoce() {
+  const row = {
+    periodo_id: periodo.id,
+    tipo: $("vTipo").value,
+    descrizione: $("vDesc").value.trim() || null,
+    quantita: $("vQta").value !== "" ? parseFloat($("vQta").value) : null,
+    um: $("vUm").value.trim() || null,
+    importo: $("vImp").value !== "" ? parseFloat($("vImp").value) : null,
+    origine: "manuale"
+  };
+  try {
+    const { error } = await sb.from("tm_paghe_voce").insert(row).select().single();
+    if (error) throw error;
+    $("vDesc").value = ""; $("vQta").value = ""; $("vUm").value = ""; $("vImp").value = "";
+    await loadVoci();
+  } catch (e) {
+    msg("Errore nell'aggiungere la voce: " + (e.message || e), false);
+  }
+}
+
+async function deleteVoce(id) {
+  if (!confirm("Eliminare questa voce?")) return;
+  try {
+    const { error } = await sb.from("tm_paghe_voce").delete().eq("id", id);
+    if (error) throw error;
+    await loadVoci();
+  } catch (e) {
+    msg("Errore nell'eliminare la voce: " + (e.message || e), false);
+  }
+}
+
+// ---- STATO PERIODO ----
+async function toggleStato() {
+  const nuovo = periodo.stato === "chiuso" ? "aperto" : "chiuso";
+  try {
+    const { data, error } = await sb.from("tm_paghe_periodo")
+      .update({ stato: nuovo, chiuso_at: nuovo === "chiuso" ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
+      .eq("id", periodo.id).select().single();
+    if (error) throw error;
+    periodo = data;
+    await renderPeriodo();
+  } catch (e) {
+    msg("Errore nel cambiare stato: " + (e.message || e), false);
+  }
+}
+
+checkAuth();
+</script>
+</body>
+</html>
