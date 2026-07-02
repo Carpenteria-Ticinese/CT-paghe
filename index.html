@@ -81,6 +81,11 @@
         <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
       </div>
 
+      <div id="importBar" style="margin-top:10px">
+        <button class="btn sec" onclick="importaOreCantiere()">⟳ Ricarica ore dal Cantiere</button>
+        <span id="importInfo" class="muted" style="margin-left:8px"></span>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -206,7 +211,14 @@ async function renderPeriodo() {
   $("periodoStato").innerHTML = `<span class="badge ${chiuso ? "chiuso" : "aperto"}">${chiuso ? "CHIUSO" : "APERTO"}</span>`;
   $("btnStato").textContent = chiuso ? "Riapri periodo" : "Chiudi periodo";
   $("addBox").style.display = chiuso ? "none" : "block";
+  $("importBar").style.display = chiuso ? "none" : "block";
+  $("importInfo").textContent = "";
   await loadVoci();
+  // Import automatico alla prima apertura: se il periodo è aperto e non esiste
+  // già la voce "ore da Cantiere", carica le ore da solo (senza sovrascrivere modifiche).
+  if (!chiuso && !voci.some(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere")) {
+    await importaOreCantiere();
+  }
 }
 
 // ---- VOCI ----
@@ -269,6 +281,63 @@ async function deleteVoce(id) {
     await loadVoci();
   } catch (e) {
     msg("Errore nell'eliminare la voce: " + (e.message || e), false);
+  }
+}
+
+// ---- IMPORT ORE DAL CANTIERE ----
+function meseRange(anno, mese) {
+  const start = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const ultimo = new Date(anno, mese, 0).getDate();
+  const end = `${anno}-${String(mese).padStart(2, "0")}-${String(ultimo).padStart(2, "0")}`;
+  return { start, end };
+}
+
+async function importaOreCantiere() {
+  $("importInfo").textContent = "Importazione…";
+  try {
+    const { start, end } = meseRange(periodo.anno, periodo.mese);
+    const { data, error } = await sb.from("giornate")
+      .select("ore_totali")
+      .eq("operaio_id", periodo.operaio_id)
+      .gte("data", start).lte("data", end);
+    if (error) throw error;
+    const righe = data || [];
+    if (righe.length === 0) { $("importInfo").textContent = "Nessuna giornata trovata in questo mese."; return; }
+    const oreTot = +righe.reduce((s, g) => s + (Number(g.ore_totali) || 0), 0).toFixed(2);
+
+    // tariffa dall'anagrafica, se presente (solo per operai a ore)
+    let importo = null, notaTariffa = "";
+    try {
+      const { data: anag } = await sb.from("tm_paghe_anagrafica")
+        .select("tariffa,tipo_salario").eq("operaio_id", periodo.operaio_id).maybeSingle();
+      if (anag && anag.tipo_salario === "orario" && anag.tariffa != null) {
+        importo = +(oreTot * Number(anag.tariffa)).toFixed(2);
+      } else if (anag && anag.tipo_salario === "mensile") {
+        notaTariffa = " (operaio mensile: ore di riferimento, importo a parte)";
+      } else {
+        notaTariffa = " (tariffa non impostata: importo da compilare)";
+      }
+    } catch (e) { /* anagrafica opzionale in questa fase */ }
+
+    const payload = {
+      periodo_id: periodo.id,
+      tipo: "ore_ordinarie",
+      descrizione: `Ore da Cantiere (${righe.length} giornate)`,
+      quantita: oreTot, um: "h", importo, origine: "cantiere"
+    };
+    const esistente = voci.find(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere");
+    if (esistente) {
+      const { error: e2 } = await sb.from("tm_paghe_voce").update(payload).eq("id", esistente.id).select().single();
+      if (e2) throw e2;
+    } else {
+      const { error: e3 } = await sb.from("tm_paghe_voce").insert(payload).select().single();
+      if (e3) throw e3;
+    }
+    $("importInfo").textContent = `Importate ${fmt(oreTot)} h da ${righe.length} giornate${notaTariffa}.`;
+    await loadVoci();
+  } catch (e) {
+    $("importInfo").textContent = "";
+    msg("Errore import ore: " + (e.message || e), false);
   }
 }
 
