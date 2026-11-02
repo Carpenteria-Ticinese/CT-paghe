@@ -38,7 +38,7 @@
 </head>
 <body>
 <header>
-  <h1>Paghe · Registrazione</h1>
+  <h1>Paghe · Registrazione <span style="font-size:12px;font-weight:400;opacity:.8">v2 (2.11.2026)</span></h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
 <main>
@@ -61,6 +61,7 @@
         <div>
           <label>Operaio</label>
           <select id="selOperaio"></select>
+          <div id="avvisoOperai" style="margin-top:8px"></div>
         </div>
         <div style="max-width:110px">
           <label>Anno</label>
@@ -174,14 +175,44 @@ function initControls() {
   const mesi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
   $("selMese").innerHTML = mesi.map((m, i) => `<option value="${i + 1}" ${i === now.getMonth() ? "selected" : ""}>${m}</option>`).join("");
 }
-async function loadOperai() {
-  try {
-    const { data, error } = await sb.from("operai").select("id,nome,cognome").eq("attivo", true).order("cognome");
-    if (error) throw error;
-    $("selOperaio").innerHTML = (data || []).map(o => `<option value="${o.id}">${o.cognome || ""} ${o.nome || ""}</option>`).join("");
-  } catch (e) {
-    $("selOperaio").innerHTML = `<option value="">Errore nel caricare gli operai</option>`;
+// Solo i Dipendenti hanno la busta paga: gli Esterni (rapporto = 'esterno') non compaiono mai.
+function erroreRapporto(e) {
+  const txt = ((e && (e.code || "")) + " " + (e && (e.message || "")) + " " + (e && (e.details || ""))).toLowerCase();
+  if (txt.includes("42703") || txt.includes("pgrst204") || (txt.includes("rapporto") && txt.includes("column"))) {
+    return "Il database non ha ancora la colonna «rapporto» (database vecchio): impossibile distinguere Dipendenti ed Esterni. Paghe è bloccata per sicurezza. Avvisa il Direttore.";
   }
+  return null;
+}
+function erroreOperai(testo) {
+  $("selOperaio").innerHTML = `<option value="">Errore nel caricare le persone</option>`;
+  $("selOperaio").disabled = true;
+  $("avvisoOperai").innerHTML = `<div class="msg err">${testo}</div>`;
+}
+async function loadOperai() {
+  $("avvisoOperai").innerHTML = "";
+  $("selOperaio").disabled = false;
+  try {
+    const { data, error } = await sb.from("operai").select("id,nome,cognome")
+      .eq("attivo", true).eq("rapporto", "dipendente").order("cognome");
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      // zero dipendenti non e' un caso normale: errore a schermo, mai un elenco vuoto in silenzio
+      erroreOperai("Nessun dipendente trovato. Può essere un problema di accesso (solo il titolare vede Paghe) o i dati mancano. Controlla di essere entrato con l'account giusto.");
+      return;
+    }
+    $("selOperaio").innerHTML = data.map(o => `<option value="${o.id}">${o.cognome || ""} ${o.nome || ""}</option>`).join("");
+  } catch (e) {
+    erroreOperai(erroreRapporto(e) || ("Errore nel caricare le persone: " + (e.message || e)));
+  }
+}
+
+// Controllo in piu' (anche se qualcuno apre una scheda per id): la persona deve essere un Dipendente.
+// Ritorna true solo se rapporto = 'dipendente'. Lancia errore se la lettura fallisce o la colonna manca.
+async function verificaDipendente(operaio_id) {
+  const { data, error } = await sb.from("operai").select("id,rapporto").eq("id", operaio_id).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Persona non trovata o non accessibile.");
+  return data.rapporto === "dipendente";
 }
 
 // ---- PERIODO ----
@@ -191,6 +222,10 @@ async function apriPeriodo() {
   const mese = parseInt($("selMese").value, 10);
   if (!operaio_id || !anno || !mese) { alert("Seleziona operaio, anno e mese."); return; }
   try {
+    if (!(await verificaDipendente(operaio_id))) {
+      alert("Questa persona non è un Dipendente: per gli Esterni non esiste busta paga.");
+      return;
+    }
     const { data, error } = await sb.from("tm_paghe_periodo")
       .upsert({ operaio_id, anno, mese }, { onConflict: "operaio_id,anno,mese" })
       .select().single();
@@ -198,7 +233,7 @@ async function apriPeriodo() {
     periodo = data;
     await renderPeriodo();
   } catch (e) {
-    alert("Errore nell'aprire il periodo: " + (e.message || e));
+    alert(erroreRapporto(e) || ("Errore nell'aprire il periodo: " + (e.message || e)));
   }
 }
 
@@ -254,6 +289,9 @@ function labelTipo(t) {
 }
 
 async function addVoce() {
+  try {
+    if (!(await verificaDipendente(periodo.operaio_id))) { msg("Persona non Dipendente: nessuna riga paga.", false); return; }
+  } catch (e) { msg(erroreRapporto(e) || ("Errore nel controllo del rapporto: " + (e.message || e)), false); return; }
   const row = {
     periodo_id: periodo.id,
     tipo: $("vTipo").value,
@@ -295,6 +333,11 @@ function meseRange(anno, mese) {
 async function importaOreCantiere() {
   $("importInfo").textContent = "Importazione…";
   try {
+    if (!(await verificaDipendente(periodo.operaio_id))) {
+      $("importInfo").textContent = "";
+      msg("Persona non Dipendente: nessuna riga paga.", false);
+      return;
+    }
     const { start, end } = meseRange(periodo.anno, periodo.mese);
     const { data, error } = await sb.from("giornate")
       .select("ore_totali")
@@ -337,7 +380,7 @@ async function importaOreCantiere() {
     await loadVoci();
   } catch (e) {
     $("importInfo").textContent = "";
-    msg("Errore import ore: " + (e.message || e), false);
+    msg(erroreRapporto(e) || ("Errore import ore: " + (e.message || e)), false);
   }
 }
 
