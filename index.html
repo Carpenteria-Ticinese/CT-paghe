@@ -3,31 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Paghe</title>
+<title>Paghe · Carpenteria Ticinese</title>
+<meta name="theme-color" content="#e0a800">
+<link rel="manifest" href="manifest.json?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=4">
+<link rel="apple-touch-icon" href="icone/icona-180.png?v=4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Paghe">
 <style>
-  :root { --viola:#6a3d9a; --viola-ch:#f1eaf8; --bg:#f4f6f8; --bord:#cfd5dc; --txt:#1c2733; --muted:#55606b;
+  :root { --acc:#e0a800; --acc-txt:#1c1c1c; --acc-scuro:#7a5200; --acc-ch:#fff4d6; --bg:#f4f6f8; --bord:#cfd5dc; --txt:#1c2733; --muted:#55606b;
           --rosso:#b42318; --rosso-ch:#fdecea; --verde:#1e7d34; --verde-ch:#e7f5ea; --giallo-ch:#fff4d6; --giallo:#7a5200; }
   * { box-sizing:border-box; }
   html, body { overflow-x:hidden; }
   body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--txt); font-size:17px; line-height:1.4; }
-  header { background:var(--viola); color:#fff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  header { background:var(--acc); color:var(--acc-txt); padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
   header h1 { font-size:20px; margin:0; display:flex; align-items:center; gap:8px; }
-  header h1 small { font-size:12px; font-weight:400; opacity:.85; }
-  header button { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.6); color:#fff; padding:10px 14px; border-radius:8px; cursor:pointer; font-size:16px; min-height:44px; }
+  header h1 small { font-size:13px; font-weight:600; }
+  header button { background:#fff; border:2px solid var(--acc-txt); color:var(--acc-txt); font-weight:700; padding:10px 14px; border-radius:8px; cursor:pointer; font-size:16px; min-height:44px; }
   main { max-width:820px; margin:0 auto; padding:12px 16px 40px; }
   .card { background:#fff; border:1px solid var(--bord); border-radius:10px; padding:14px; margin-bottom:14px; }
-  .avviso-stima { background:var(--viola-ch); border:1px solid #d4c2ea; color:#3d2266; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-weight:600; font-size:16px; }
+  .avviso-stima { background:var(--acc-ch); border:1px solid #e9c46a; color:#4a3200; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-weight:600; font-size:16px; }
   label { display:block; font-weight:600; font-size:15px; margin:8px 0 4px; }
   input, select { width:100%; padding:10px; border:1px solid var(--bord); border-radius:8px; font-size:17px; min-height:46px; background:#fff; }
   .row { display:flex; gap:10px; flex-wrap:wrap; }
   .row > div { flex:1; min-width:120px; }
-  .btn { background:var(--viola); color:#fff; border:none; padding:12px 16px; border-radius:8px; font-size:17px; font-weight:700; cursor:pointer; min-height:48px; }
-  .btn.sec { background:#eef0f4; color:var(--viola); border:1px solid var(--bord); }
-  .btn.danger { background:var(--rosso); }
+  .btn { background:var(--acc); color:var(--acc-txt); border:none; padding:12px 16px; border-radius:8px; font-size:17px; font-weight:700; cursor:pointer; min-height:48px; }
+  .btn.sec { background:#eef0f4; color:var(--acc-scuro); border:1px solid var(--bord); }
+  .btn.danger { background:var(--rosso); color:#fff; }
   .btn:disabled { opacity:.5; cursor:not-allowed; }
   .schede { display:flex; gap:8px; margin-bottom:12px; }
-  .schede button { flex:1; min-height:52px; font-size:16px; border-radius:10px; border:2px solid var(--viola); background:#fff; color:var(--viola); font-weight:700; cursor:pointer; padding:6px; }
-  .schede button.attiva { background:var(--viola); color:#fff; }
+  .schede button { flex:1; min-height:52px; font-size:16px; border-radius:10px; border:2px solid var(--acc-scuro); background:#fff; color:var(--acc-scuro); font-weight:700; cursor:pointer; padding:6px; }
+  .schede button.attiva { background:var(--acc); color:var(--acc-txt); }
   table { width:100%; border-collapse:collapse; margin-top:8px; }
   th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--bord); font-size:15px; }
   th { color:var(--muted); font-weight:600; }
@@ -44,8 +51,8 @@
   .msg.info { background:#eef3f8; color:#24425e; }
   .verif { display:inline-block; background:var(--giallo-ch); color:var(--giallo); border:1px solid #e9c46a; border-radius:6px; padding:1px 6px; font-size:13px; font-weight:700; margin-top:2px; }
   /* costo */
-  .riepilogo { background:#fff; border:2px solid var(--viola); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-  .riepilogo .grande { font-size:26px; font-weight:800; color:var(--viola); }
+  .riepilogo { background:#fff; border:2px solid var(--acc); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .riepilogo .grande { font-size:26px; font-weight:800; color:var(--acc-txt); }
   .persona { border:1px solid var(--bord); border-radius:10px; margin-bottom:10px; background:#fff; }
   .persona > summary { list-style:none; cursor:pointer; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:56px; }
   .persona > summary::-webkit-details-marker { display:none; }
@@ -57,7 +64,7 @@
   .riga .dx { white-space:nowrap; font-weight:600; text-align:right; }
   .riga .det { display:block; color:var(--muted); font-size:14px; }
   .riga.totale { border-bottom:none; border-top:2px solid var(--txt); font-weight:800; font-size:18px; }
-  .sottotitolo { margin:10px 0 2px; font-weight:700; color:var(--viola); font-size:15px; }
+  .sottotitolo { margin:10px 0 2px; font-weight:700; color:var(--acc-scuro); font-size:15px; }
   @media (max-width:560px) {
     #tabVoci thead { display:none; }
     #tabVoci, #tabVoci tbody, #tabVoci tr, #tabVoci td { display:block; width:100%; }
@@ -71,8 +78,8 @@
 <body>
 <header>
   <h1>
-    <svg width="30" height="24" viewBox="0 0 30 24" aria-hidden="true"><rect x="1" y="2" width="28" height="20" rx="3" fill="#fff"/><path d="M2 4 L15 13 L28 4" fill="none" stroke="#6a3d9a" stroke-width="2"/><text x="15" y="21" text-anchor="middle" font-size="8" font-weight="700" fill="#6a3d9a" font-family="Arial">CHF</text></svg>
-    Paghe <small>v3 (3.11.2026)</small>
+    <span aria-hidden="true">💰</span>
+    Paghe <small>v4 (3.11.2026)</small>
   </h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
@@ -81,11 +88,13 @@
 
   <!-- LOGIN -->
   <div id="authCard" class="card hidden">
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="username">
-    <label for="password">Password</label>
-    <input id="password" type="password" autocomplete="current-password">
-    <div style="margin-top:12px"><button class="btn" onclick="login()">Entra</button></div>
+    <form id="loginForm" onsubmit="return loginSubmit(event)">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <div style="margin-top:12px"><button id="btnEntra" type="submit" class="btn">Entra</button></div>
+    </form>
     <div id="authMsg"></div>
   </div>
 
@@ -105,11 +114,13 @@
         </div>
         <div style="margin-top:12px"><button class="btn" style="width:100%" onclick="calcolaMese()">📊 Calcola il costo del mese</button></div>
       </div>
-      <div id="costoMsg"></div>
-      <div id="costoRiepilogo"></div>
-      <div id="costoPersone"></div>
-      <div id="costoAgenzia"></div>
-      <div id="costoParametri"></div>
+      <div id="costoRisultato">
+        <div id="costoMsg"></div>
+        <div id="costoRiepilogo"></div>
+        <div id="costoPersone"></div>
+        <div id="costoAgenzia"></div>
+        <div id="costoParametri"></div>
+      </div>
     </div>
 
     <!-- SCHEDA ORE E VOCI (come v2) -->
@@ -497,16 +508,98 @@ function tariffaPasto(ruolo, T) {
 // ======================================================================
 // SCHEDA «COSTO DEL MESE»
 // ======================================================================
-function mostraScheda(n) {
-  $("schedaCosto").classList.toggle("hidden", n !== "costo");
-  $("schedaRegistra").classList.toggle("hidden", n !== "registra");
-  $("tabCosto").classList.toggle("attiva", n === "costo");
-  $("tabRegistra").classList.toggle("attiva", n === "registra");
+function mostraScheda(n) { if (vista.s !== n) vaiA(n, null); }   // tasto in alto: un passo nella storia
+
+// ======================================================================
+// TASTO INDIETRO (mouse, tastiera, telefono)
+// Ogni schermata è un passo nella storia del browser (indirizzo con #):
+//   #costo · #costo/risultato · #costo/dettaglio · #registra · #registra/periodo
+// Indietro torna alla schermata precedente dentro l'app. Non si perde niente:
+// se c'è una voce scritta e non aggiunta, Indietro chiede conferma.
+// ======================================================================
+const SCHERMATE = { costo: ["risultato", "dettaglio"], registra: ["periodo"] };
+let vista = { s: "costo", v: null };   // schermata attuale
+let ultimoDettaglio = null;          // l'ultimo dettaglio (dipendente/parametri) aperto con un tocco
+let navInCorso = false;                // true mentre si applica un «indietro»: non si ripusha
+
+function indirizzoVista(s, v) { return "#" + s + (v ? "/" + v : ""); }
+
+// Mostra la schermata SENZA toccare la storia
+function applicaVista(s, v) {
+  if (!SCHERMATE[s]) { s = "costo"; v = null; }
+  if (v && !SCHERMATE[s].includes(v)) v = null;
+  // registra/periodo e costo/risultato esistono solo se i dati sono stati caricati
+  if (s === "registra" && v === "periodo" && !periodo) v = null;
+  if (s === "costo" && v && !$("costoRiepilogo").innerHTML && !$("costoMsg").innerHTML) v = null;
+  vista = { s, v };
+  $("schedaCosto").classList.toggle("hidden", s !== "costo");
+  $("schedaRegistra").classList.toggle("hidden", s !== "registra");
+  $("tabCosto").classList.toggle("attiva", s === "costo");
+  $("tabRegistra").classList.toggle("attiva", s === "registra");
+  $("tabCosto").setAttribute("aria-current", s === "costo" ? "page" : "false");
+  $("tabRegistra").setAttribute("aria-current", s === "registra" ? "page" : "false");
+  $("costoRisultato").classList.toggle("hidden", !(s === "costo" && v));
+  $("periodoCard").classList.toggle("hidden", !(s === "registra" && v === "periodo"));
+  if (s === "costo" && v === "dettaglio") {
+    // avanti nella storia: si riapre l'ultimo dettaglio aperto
+    if (!document.querySelector("#costoRisultato details.persona[open]") && ultimoDettaglio && ultimoDettaglio.isConnected) {
+      ultimoDettaglio.setAttribute("open", ""); ultimoDettaglio.dataset.mio = "1";
+    }
+  } else {
+    document.querySelectorAll("#costoRisultato details.persona[data-mio]").forEach(d => { d.removeAttribute("open"); delete d.dataset.mio; });
+  }
 }
+
+// Va a una schermata e la mette nella storia (se è cambiata)
+function vaiA(s, v, sostituisci) {
+  if (navInCorso) return;
+  if (!sostituisci && vista.s === s && vista.v === (v || null)) return;
+  applicaVista(s, v || null);
+  try {
+    const st = { app: "paghe", s: vista.s, v: vista.v };
+    if (sostituisci) history.replaceState(st, "", indirizzoVista(vista.s, vista.v));
+    else history.pushState(st, "", indirizzoVista(vista.s, vista.v));
+  } catch (e) { /* senza storia si naviga lo stesso */ }
+}
+
+// C'è una voce scritta e non ancora aggiunta?
+function voceNonSalvata() {
+  return !!periodo && vista.s === "registra" && vista.v === "periodo" &&
+    ["vDesc", "vQta", "vUm", "vImp"].some(id => String($(id).value || "").trim() !== "");
+}
+
+window.addEventListener("popstate", (ev) => {
+  if ($("app").classList.contains("hidden")) return;            // login: niente da fare
+  let st = ev.state;
+  if (!st || st.app !== "paghe") {                               // voce senza stato: si legge l'indirizzo
+    const m = /^#(\w+)(?:\/(\w+))?$/.exec(location.hash || "");
+    st = m ? { s: m[1], v: m[2] || null } : { s: "costo", v: null };
+  }
+  // Si esce dal dettaglio del dipendente con una voce non aggiunta: conferma, senza perdere nulla.
+  if (voceNonSalvata() && !(st.s === "registra" && st.v === "periodo")) {
+    if (!confirm("Hai scritto una voce che non hai ancora aggiunto. Se esci la perdi. Uscire lo stesso?")) {
+      try { history.pushState({ app: "paghe", s: vista.s, v: vista.v }, "", indirizzoVista(vista.s, vista.v)); } catch (e) {}
+      return;
+    }
+    ["vDesc", "vQta", "vUm", "vImp"].forEach(id => { $(id).value = ""; });
+  }
+  navInCorso = true;
+  try { applicaVista(st.s, st.v || null); } finally { navInCorso = false; }
+});
+window.addEventListener("beforeunload", (e) => { if (voceNonSalvata()) { e.preventDefault(); e.returnValue = ""; } });
+// aprire il dettaglio di un dipendente (o dei parametri) con un tocco = un passo nella storia
+document.addEventListener("click", (e) => {
+  const sm = e.target && e.target.closest ? e.target.closest("#costoRisultato details.persona > summary") : null;
+  if (!sm || sm.parentElement.open) return;            // solo l'apertura (a questo punto il dettaglio è ancora chiuso)
+  sm.parentElement.dataset.mio = "1";
+  ultimoDettaglio = sm.parentElement;
+  if (vista.s === "costo" && vista.v === "risultato") vaiA("costo", "dettaglio");
+});
 
 async function calcolaMese() {
   const anno = parseInt($("cAnno").value, 10), mese = parseInt($("cMese").value, 10);
   $("costoMsg").innerHTML = `<div class="msg info">Calcolo in corso…</div>`;
+  vaiA("costo", "risultato");
   $("costoRiepilogo").innerHTML = ""; $("costoPersone").innerHTML = ""; $("costoAgenzia").innerHTML = ""; $("costoParametri").innerHTML = "";
   if (!anno || !mese) { $("costoMsg").innerHTML = `<div class="msg err">Scegli anno e mese.</div>`; return; }
   try {
@@ -655,14 +748,22 @@ function showLogin() { $("authCard").classList.remove("hidden"); $("app").classL
 function showApp() {
   $("authCard").classList.add("hidden"); $("app").classList.remove("hidden"); $("btnLogout").classList.remove("hidden");
   initControls(); loadOperai();
+  // ricarico con un # (collegamento diretto): si apre la schermata; il dettaglio no (non ci sono ancora i dati)
+  const m = /^#(\w+)/.exec(location.hash || "");
+  vaiA(m && SCHERMATE[m[1]] ? m[1] : "costo", null, true);
 }
+let loginInCorso = false;
+function loginSubmit(ev) { if (ev) ev.preventDefault(); login(); return false; }   // Invio = Entra (un solo invio alla volta)
 async function login() {
+  if (loginInCorso) return;
+  loginInCorso = true; $("btnEntra").disabled = true;
   $("authMsg").innerHTML = "";
   try {
     const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
     if (error) { $("authMsg").innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
     showApp();
   } catch (e) { $("authMsg").innerHTML = `<div class="msg err">Errore di accesso</div>`; }
+  finally { loginInCorso = false; $("btnEntra").disabled = false; }
 }
 async function logout() { try { await sb.auth.signOut(); } catch (e) {} showLogin(); }
 
@@ -737,6 +838,7 @@ async function apriPeriodo() {
     if (error) throw error;
     periodo = data;
     await renderPeriodo();
+    vaiA("registra", "periodo");
   } catch (e) {
     alert(erroreRapporto(e) || ("Errore nell'aprire il periodo: " + (e.message || e)));
   }
