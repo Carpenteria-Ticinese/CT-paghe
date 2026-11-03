@@ -3,51 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Paghe — Registrazione</title>
+<title>Paghe</title>
 <style>
-  :root { --blu:#1f6fb2; --bg:#f4f6f8; --bord:#d9dee3; --txt:#1c2733; --muted:#667; }
+  :root { --viola:#6a3d9a; --viola-ch:#f1eaf8; --bg:#f4f6f8; --bord:#cfd5dc; --txt:#1c2733; --muted:#55606b;
+          --rosso:#b42318; --rosso-ch:#fdecea; --verde:#1e7d34; --verde-ch:#e7f5ea; --giallo-ch:#fff4d6; --giallo:#7a5200; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--txt); font-size:16px; }
-  header { background:var(--blu); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
-  header h1 { font-size:18px; margin:0; }
-  header button { background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff; padding:6px 10px; border-radius:6px; cursor:pointer; }
-  main { max-width:820px; margin:0 auto; padding:16px; }
-  .card { background:#fff; border:1px solid var(--bord); border-radius:10px; padding:16px; margin-bottom:16px; }
-  label { display:block; font-weight:600; font-size:14px; margin:8px 0 4px; }
-  input, select { width:100%; padding:9px 10px; border:1px solid var(--bord); border-radius:8px; font-size:16px; }
+  html, body { overflow-x:hidden; }
+  body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--txt); font-size:17px; line-height:1.4; }
+  header { background:var(--viola); color:#fff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  header h1 { font-size:20px; margin:0; display:flex; align-items:center; gap:8px; }
+  header h1 small { font-size:12px; font-weight:400; opacity:.85; }
+  header button { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.6); color:#fff; padding:10px 14px; border-radius:8px; cursor:pointer; font-size:16px; min-height:44px; }
+  main { max-width:820px; margin:0 auto; padding:12px 16px 40px; }
+  .card { background:#fff; border:1px solid var(--bord); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .avviso-stima { background:var(--viola-ch); border:1px solid #d4c2ea; color:#3d2266; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-weight:600; font-size:16px; }
+  label { display:block; font-weight:600; font-size:15px; margin:8px 0 4px; }
+  input, select { width:100%; padding:10px; border:1px solid var(--bord); border-radius:8px; font-size:17px; min-height:46px; background:#fff; }
   .row { display:flex; gap:10px; flex-wrap:wrap; }
   .row > div { flex:1; min-width:120px; }
-  .btn { background:var(--blu); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; }
-  .btn.sec { background:#eef2f6; color:var(--blu); border:1px solid var(--bord); }
-  .btn.danger { background:#c0392b; }
+  .btn { background:var(--viola); color:#fff; border:none; padding:12px 16px; border-radius:8px; font-size:17px; font-weight:700; cursor:pointer; min-height:48px; }
+  .btn.sec { background:#eef0f4; color:var(--viola); border:1px solid var(--bord); }
+  .btn.danger { background:var(--rosso); }
   .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .schede { display:flex; gap:8px; margin-bottom:12px; }
+  .schede button { flex:1; min-height:52px; font-size:16px; border-radius:10px; border:2px solid var(--viola); background:#fff; color:var(--viola); font-weight:700; cursor:pointer; padding:6px; }
+  .schede button.attiva { background:var(--viola); color:#fff; }
   table { width:100%; border-collapse:collapse; margin-top:8px; }
-  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--bord); font-size:14px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--bord); font-size:15px; }
   th { color:var(--muted); font-weight:600; }
   td.num, th.num { text-align:right; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:700; }
-  .badge.aperto { background:#e7f5ea; color:#1e7d34; }
-  .badge.chiuso { background:#fdecea; color:#c0392b; }
-  .tot { font-size:20px; font-weight:800; }
-  .muted { color:var(--muted); font-size:13px; }
-  .hidden { display:none; }
-  .msg { padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:14px; }
-  .msg.err { background:#fdecea; color:#c0392b; }
-  .msg.ok { background:#e7f5ea; color:#1e7d34; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:13px; font-weight:700; }
+  .badge.aperto { background:var(--verde-ch); color:var(--verde); }
+  .badge.chiuso { background:var(--rosso-ch); color:var(--rosso); }
+  .tot { font-size:21px; font-weight:800; }
+  .muted { color:var(--muted); font-size:14px; }
+  .hidden { display:none !important; }
+  .msg { padding:10px 12px; border-radius:8px; margin:8px 0; font-size:15px; }
+  .msg.err { background:var(--rosso-ch); color:var(--rosso); }
+  .msg.ok { background:var(--verde-ch); color:var(--verde); }
+  .msg.info { background:#eef3f8; color:#24425e; }
+  .verif { display:inline-block; background:var(--giallo-ch); color:var(--giallo); border:1px solid #e9c46a; border-radius:6px; padding:1px 6px; font-size:13px; font-weight:700; margin-top:2px; }
+  /* costo */
+  .riepilogo { background:#fff; border:2px solid var(--viola); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .riepilogo .grande { font-size:26px; font-weight:800; color:var(--viola); }
+  .persona { border:1px solid var(--bord); border-radius:10px; margin-bottom:10px; background:#fff; }
+  .persona > summary { list-style:none; cursor:pointer; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:56px; }
+  .persona > summary::-webkit-details-marker { display:none; }
+  .persona > summary .nome { font-weight:700; font-size:17px; }
+  .persona > summary .cifra { font-weight:800; font-size:18px; white-space:nowrap; }
+  .persona .corpo { padding:0 14px 12px; }
+  .riga { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid #eceff2; }
+  .riga .sx { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .riga .dx { white-space:nowrap; font-weight:600; text-align:right; }
+  .riga .det { display:block; color:var(--muted); font-size:14px; }
+  .riga.totale { border-bottom:none; border-top:2px solid var(--txt); font-weight:800; font-size:18px; }
+  .sottotitolo { margin:10px 0 2px; font-weight:700; color:var(--viola); font-size:15px; }
+  @media (max-width:560px) {
+    #tabVoci thead { display:none; }
+    #tabVoci, #tabVoci tbody, #tabVoci tr, #tabVoci td { display:block; width:100%; }
+    #tabVoci tr { border-bottom:1px solid var(--bord); padding:6px 0; }
+    #tabVoci td { border:none; padding:2px 0; text-align:left; }
+    #tabVoci td.num { text-align:left; }
+    #tabVoci td[data-l]::before { content:attr(data-l) ": "; color:var(--muted); font-size:13px; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Paghe · Registrazione <span style="font-size:12px;font-weight:400;opacity:.8">v2 (2.11.2026)</span></h1>
+  <h1>
+    <svg width="30" height="24" viewBox="0 0 30 24" aria-hidden="true"><rect x="1" y="2" width="28" height="20" rx="3" fill="#fff"/><path d="M2 4 L15 13 L28 4" fill="none" stroke="#6a3d9a" stroke-width="2"/><text x="15" y="21" text-anchor="middle" font-size="8" font-weight="700" fill="#6a3d9a" font-family="Arial">CHF</text></svg>
+    Paghe <small>v3 (3.11.2026)</small>
+  </h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
 <main>
+  <div class="avviso-stima">ℹ️ Stima interna: le buste ufficiali le fa il fiduciario.</div>
 
   <!-- LOGIN -->
   <div id="authCard" class="card hidden">
-    <label>Email</label>
+    <label for="email">Email</label>
     <input id="email" type="email" autocomplete="username">
-    <label>Password</label>
+    <label for="password">Password</label>
     <input id="password" type="password" autocomplete="current-password">
     <div style="margin-top:12px"><button class="btn" onclick="login()">Entra</button></div>
     <div id="authMsg"></div>
@@ -55,78 +91,100 @@
 
   <!-- APP -->
   <div id="app" class="hidden">
-
-    <div class="card">
-      <div class="row">
-        <div>
-          <label>Operaio</label>
-          <select id="selOperaio"></select>
-          <div id="avvisoOperai" style="margin-top:8px"></div>
-        </div>
-        <div style="max-width:110px">
-          <label>Anno</label>
-          <input id="inAnno" type="number" step="1">
-        </div>
-        <div style="max-width:140px">
-          <label>Mese</label>
-          <select id="selMese"></select>
-        </div>
-      </div>
-      <div style="margin-top:12px"><button class="btn" onclick="apriPeriodo()">Apri periodo</button></div>
+    <div class="schede">
+      <button id="tabCosto" class="attiva" onclick="mostraScheda('costo')">📊 Costo del mese</button>
+      <button id="tabRegistra" onclick="mostraScheda('registra')">📝 Ore e voci</button>
     </div>
 
-    <div id="periodoCard" class="card hidden">
-      <div id="msgBox"></div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><strong id="periodoTitolo"></strong> <span id="periodoStato"></span></div>
-        <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
-      </div>
-
-      <div id="importBar" style="margin-top:10px">
-        <button class="btn sec" onclick="importaOreCantiere()">⟳ Ricarica ore dal Cantiere</button>
-        <span id="importInfo" class="muted" style="margin-left:8px"></span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Tipo</th><th>Descrizione</th><th class="num">Quantità</th><th>UM</th><th class="num">Importo (CHF)</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="vociBody"></tbody>
-      </table>
-
-      <div style="margin-top:8px; text-align:right;">
-        Totale lordo: <span id="totale" class="tot">0,00</span> CHF
-      </div>
-
-      <div id="addBox" style="margin-top:16px; border-top:1px solid var(--bord); padding-top:12px;">
+    <!-- SCHEDA COSTO DEL MESE -->
+    <div id="schedaCosto">
+      <div class="card">
         <div class="row">
-          <div>
-            <label>Tipo</label>
-            <select id="vTipo">
-              <option value="ore_ordinarie">Ore ordinarie</option>
-              <option value="straordinari">Straordinari</option>
-              <option value="indennita_trasferta">Indennità trasferta</option>
-              <option value="salario_mensile">Salario mensile</option>
-              <option value="tredicesima">13ª</option>
-              <option value="premio">Premio</option>
-              <option value="assenza">Assenza</option>
-              <option value="correzione">Correzione</option>
-              <option value="altro">Altro</option>
-            </select>
-          </div>
-          <div><label>Descrizione</label><input id="vDesc" type="text"></div>
+          <div style="max-width:130px"><label for="cAnno">Anno</label><input id="cAnno" type="number" step="1"></div>
+          <div><label for="cMese">Mese</label><select id="cMese"></select></div>
         </div>
-        <div class="row" style="margin-top:4px">
-          <div style="max-width:130px"><label>Quantità</label><input id="vQta" type="number" step="0.01"></div>
-          <div style="max-width:100px"><label>UM</label><input id="vUm" type="text" placeholder="h / CHF"></div>
-          <div style="max-width:150px"><label>Importo CHF</label><input id="vImp" type="number" step="0.01"></div>
-        </div>
-        <div style="margin-top:12px"><button class="btn" onclick="addVoce()">Aggiungi voce</button></div>
+        <div style="margin-top:12px"><button class="btn" style="width:100%" onclick="calcolaMese()">📊 Calcola il costo del mese</button></div>
       </div>
+      <div id="costoMsg"></div>
+      <div id="costoRiepilogo"></div>
+      <div id="costoPersone"></div>
+      <div id="costoAgenzia"></div>
+      <div id="costoParametri"></div>
     </div>
 
+    <!-- SCHEDA ORE E VOCI (come v2) -->
+    <div id="schedaRegistra" class="hidden">
+      <div class="card">
+        <div class="row">
+          <div style="min-width:200px">
+            <label for="selOperaio">Dipendente</label>
+            <select id="selOperaio"></select>
+            <div id="avvisoOperai" style="margin-top:8px"></div>
+          </div>
+          <div style="max-width:120px">
+            <label for="inAnno">Anno</label>
+            <input id="inAnno" type="number" step="1">
+          </div>
+          <div style="max-width:160px">
+            <label for="selMese">Mese</label>
+            <select id="selMese"></select>
+          </div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" onclick="apriPeriodo()">📂 Apri periodo</button></div>
+      </div>
+
+      <div id="periodoCard" class="card hidden">
+        <div id="msgBox"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap">
+          <div><strong id="periodoTitolo"></strong> <span id="periodoStato"></span></div>
+          <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
+        </div>
+
+        <div id="importBar" style="margin-top:10px">
+          <button class="btn sec" onclick="importaOreCantiere()">⟳ Ricarica ore dal Cantiere</button>
+          <div id="importInfo" class="muted" style="margin-top:6px"></div>
+        </div>
+
+        <table id="tabVoci">
+          <thead>
+            <tr><th>Tipo</th><th>Descrizione</th><th class="num">Quantità</th><th>UM</th><th class="num">Importo (CHF)</th><th></th></tr>
+          </thead>
+          <tbody id="vociBody"></tbody>
+        </table>
+
+        <div style="margin-top:8px; text-align:right;">
+          Totale lordo: <span id="totale" class="tot">0,00</span> CHF
+        </div>
+
+        <div id="costoPeriodo" style="margin-top:12px"></div>
+
+        <div id="addBox" style="margin-top:16px; border-top:1px solid var(--bord); padding-top:12px;">
+          <div class="row">
+            <div>
+              <label for="vTipo">Tipo</label>
+              <select id="vTipo">
+                <option value="ore_ordinarie">Ore ordinarie</option>
+                <option value="straordinari">Straordinari</option>
+                <option value="indennita_trasferta">Indennità trasferta/pasto (forfait, fuori contributi)</option>
+                <option value="salario_mensile">Salario mensile</option>
+                <option value="tredicesima">13ª</option>
+                <option value="premio">Premio</option>
+                <option value="assenza">Assenza</option>
+                <option value="correzione">Correzione</option>
+                <option value="altro">Altro</option>
+              </select>
+            </div>
+            <div><label for="vDesc">Descrizione</label><input id="vDesc" type="text"></div>
+          </div>
+          <div class="row" style="margin-top:4px">
+            <div><label for="vQta">Quantità</label><input id="vQta" type="number" step="0.01"></div>
+            <div><label for="vUm">UM</label><input id="vUm" type="text" placeholder="h / CHF"></div>
+            <div><label for="vImp">Importo CHF</label><input id="vImp" type="number" step="0.01"></div>
+          </div>
+          <div style="margin-top:12px"><button class="btn" onclick="addVoce()">➕ Aggiungi voce</button></div>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -138,12 +196,452 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let periodo = null;   // riga tm_paghe_periodo corrente
 let voci = [];        // voci del periodo
+const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const VERIF = `<span class="verif">⚠️ da verificare col fiduciario</span>`;
 
 function msg(text, ok) {
   $("msgBox").innerHTML = text ? `<div class="msg ${ok ? "ok" : "err"}">${text}</div>` : "";
+}
+
+// ======================================================================
+// CALCOLO (funzioni pure: nessun valore di legge scritto qui dentro;
+// tutti i valori arrivano dalla tabella tm_paghe_parametri)
+// ======================================================================
+const ONERI = ["avs_ai_ipg","ad","assegni_familiari","integrativo_ti","spese_amm_avs","lainf_prof","igm","ccl_fondo_paritetico"];
+const LPP_UNO = ["lpp_soglia_entrata","lpp_deduzione_coord","lpp_salario_max","lpp_coord_minimo","lpp_quota_azienda","lpp_rischio_azienda"];
+const FASCE = ["lpp_accredito","lpp_rischio_dovuto","ferie_settimane"];
+// solo i NOMI (per i messaggi quando un parametro manca); i valori stanno nel database
+const NOMI_PARAMETRI = { avs_ai_ipg:"AVS/AI/IPG", ad:"Disoccupazione (AD)", assegni_familiari:"Assegni familiari", integrativo_ti:"Contributo integrativo Ticino",
+  spese_amm_avs:"Spese amministrative cassa AVS", lainf_prof:"LAINF professionale", igm:"Indennità giornaliera malattia", ccl_fondo_paritetico:"Fondo paritetico CCL",
+  lpp_soglia_entrata:"LPP soglia d'entrata", lpp_deduzione_coord:"LPP deduzione di coordinamento", lpp_salario_max:"LPP salario massimo", lpp_coord_minimo:"LPP coordinato minimo",
+  lpp_quota_azienda:"LPP quota ditta", lpp_rischio_azienda:"LPP rischio e spese", tredicesima_ore:"13ª pagati a ore",
+  lpp_accredito:"Accrediti LPP per età", lpp_rischio_dovuto:"Rischio LPP per età", ferie_settimane:"Ferie per età",
+  ccl_ore_annue:"Ore annue CCL", ccl_min_mensile:"Salari minimi CCL" };
+// Voci FUORI dalla base dei contributi (decisione Umberto 3.11: l'indennità forfettaria di trasferta/pasto no;
+// il tempo di trasferta è orario di lavoro e sta già nelle ore). Entrano comunque nel costo per la ditta.
+const TIPI_FUORI_BASE = ["indennita_trasferta"];
+// Voci contate nella base ma dubbie: etichetta «da verificare col fiduciario»
+const TIPI_DUBBI = ["altro"];
+
+// arrotonda al centesimo (metà in su, anche coi numeri "storti" del binario)
+function round2(x) {
+  const n = Number(x) || 0;
+  return Math.sign(n) * Math.round(Math.abs(n) * 100 + 1e-7) / 100;
+}
+function fmtPct(v) {
+  return (Number(v) || 0).toLocaleString("it-IT", { maximumFractionDigits: 4 }) + "%";
+}
+
+// Per ogni codice (e fascia di età) prende la riga con valido_dal più recente <= primo giorno del mese.
+function scegliParametri(righe, anno, mese) {
+  const giorno = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const migliori = {};
+  for (const r of (righe || [])) {
+    if (!r || !r.valido_dal || String(r.valido_dal).slice(0, 10) > giorno) continue;
+    const k = [r.codice, r.categoria || "", r.eta_da == null ? "" : r.eta_da, r.anni_esperienza == null ? "" : r.anni_esperienza].join("|");
+    if (!migliori[k] || String(r.valido_dal) > String(migliori[k].valido_dal)) migliori[k] = r;
+  }
+  const P = { uno: {}, fasce: {}, minimi: {}, giorno };
+  for (const r of Object.values(migliori)) {
+    const x = Object.assign({}, r, { valore: Number(r.valore), tetto_annuo: r.tetto_annuo == null ? null : Number(r.tetto_annuo) });
+    if (x.codice === "ccl_min_mensile") {
+      if (x.categoria && x.anni_esperienza != null) (P.minimi[x.categoria] = P.minimi[x.categoria] || {})[x.anni_esperienza] = x;
+    } else if (x.eta_da == null) P.uno[x.codice] = x;
+    else (P.fasce[x.codice] = P.fasce[x.codice] || []).push(x);
+  }
+  for (const k of Object.keys(P.fasce)) P.fasce[k].sort((a, b) => a.eta_da - b.eta_da);
+  P.mancanti = [...ONERI, ...LPP_UNO, "tredicesima_ore"].filter(c => !P.uno[c]).concat(FASCE.filter(c => !P.fasce[c]));
+  return P;
+}
+function fasciaPer(P, codice, eta) {
+  return (P.fasce[codice] || []).find(f => eta >= f.eta_da && (f.eta_a == null || eta <= f.eta_a)) || null;
+}
+// età "di anno": anno del mese meno anno di nascita (come il foglio PARAMETRI: cambia l'anno, l'età segue)
+function etaNelAnno(dataNascita, anno) {
+  const m = /^(\d{4})-/.exec(String(dataNascita || ""));
+  return m ? anno - parseInt(m[1], 10) : null;
+}
+
+// Anni pieni fra la data di assunzione e il primo giorno del mese (massimo 10 = «10 e più"); null se manca la data
+function anniDaAssunzione(dataAssunzione, anno, mese) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dataAssunzione || ""));
+  if (!m) return null;
+  let a = anno - parseInt(m[1], 10);
+  if (mese < parseInt(m[2], 10) || (mese === parseInt(m[2], 10) && parseInt(m[3], 10) > 1)) a -= 1;
+  return Math.max(0, Math.min(10, a));
+}
+
+// Avviso (mai blocco) se la paga è sotto il salario minimo CCL.
+// inp: { tipo_salario, tariffa, ruolo, data_assunzione, occupazione, anno, mese }, mensile = somma voci «salario_mensile»
+function controllaMinimo(inp, P, mensile) {
+  const avvisi = [];
+  const cats = Object.keys(P.minimi || {});
+  if (!cats.length) return [{ testo: "Salari minimi CCL non caricati: controllo del minimo non fatto.", tipo: "info" }];
+  const anni = anniDaAssunzione(inp.data_assunzione, inp.anno, inp.mese);
+  const anniUsati = anni == null ? 0 : anni;
+  const ruolo = String(inp.ruolo || "").trim();
+  let cat = cats.find(c => c.toLowerCase() === ruolo.toLowerCase()) || null;
+  let minRiga;
+  if (cat) {
+    minRiga = (P.minimi[cat] || {})[anniUsati];
+  } else {
+    avvisi.push({ testo: `Categoria CCL non indicata (ruolo «${ruolo || "vuoto"}»): controlla. Confronto con il minimo più basso del CCL.`, tipo: "err", verif: true });
+    for (const c of cats) {
+      const r = P.minimi[c][anniUsati];
+      if (r && (!minRiga || r.valore < minRiga.valore)) { minRiga = r; }
+    }
+    cat = minRiga ? minRiga.categoria : null;
+  }
+  if (!minRiga) return avvisi.concat([{ testo: "Salario minimo CCL non trovato per questa categoria/anni.", tipo: "info" }]);
+  const quandoAnni = anni == null ? "0 anni di esperienza (data di assunzione mancante)" : `almeno ${anniUsati}${anniUsati === 10 ? "+" : ""} anni (dalla data di assunzione)`;
+  const occ = Number(inp.occupazione) > 0 ? Number(inp.occupazione) : 100;
+  if (inp.tipo_salario === "orario" && inp.tariffa != null) {
+    const ore = P.uno.ccl_ore_annue;
+    if (!ore || !(ore.valore > 0)) return avvisi.concat([{ testo: "Ore annue CCL mancanti: minimo orario non controllato.", tipo: "info" }]);
+    const minOra = minRiga.valore * 12 / ore.valore;
+    if (Number(inp.tariffa) < minOra - 1e-9) {
+      avvisi.push({ testo: `Tariffa sotto il minimo CCL (categoria ${cat}, ${quandoAnni}): ${fmt(inp.tariffa)} CHF/h, minimo ${fmt(round2(minOra))} CHF/h.`, tipo: "err", verif: true, sottoMinimo: true });
+    }
+  } else if (inp.tipo_salario === "mensile" && mensile > 0) {
+    const minMese = minRiga.valore * occ / 100;
+    if (mensile < minMese - 1e-9) {
+      avvisi.push({ testo: `Salario sotto il minimo CCL (categoria ${cat}, ${quandoAnni}${occ !== 100 ? ", occupazione " + fmt(occ) + "%" : ""}): ${fmt(mensile)} CHF/mese, minimo ${fmt(round2(minMese))} CHF/mese.`, tipo: "err", verif: true, sottoMinimo: true });
+    }
+  }
+  return avvisi;
+}
+
+// inp: { anno, mese, voci:[{tipo,importo}], tipo_salario, tariffa, data_nascita, ruolo, data_assunzione, occupazione }
+// Regola 13ª (decisione Umberto 3.11): si MATURA ogni mese per tutti (orari e mensili) con la % del parametro.
+// Una voce «13ª» nel mese è il PAGAMENTO di quanto già maturato: non aumenta il costo e non entra nella base.
+function calcolaCosto(inp, P) {
+  const out = { righe: [], avvisi: [], completo: true, lordoBase: 0, indennita: 0, t13pagata: 0, tredicesima: null, lordo: 0, contributi: 0, costo: 0, eta: null, ferie: null };
+  const avv = (testo, tipo, verif) => out.avvisi.push({ testo, tipo: tipo || "err", verif: !!verif });
+  const voci = inp.voci || [];
+  if (P.mancanti && P.mancanti.length) {
+    out.completo = false;
+    avv("Parametri mancanti per questo mese: " + P.mancanti.map(c => NOMI_PARAMETRI[c] || c).join(", ") + ". Le righe relative non sono calcolate: avvisa il Direttore.");
+  }
+  const senza = voci.filter(v => v.importo == null || v.importo === "");
+  if (senza.length) {
+    out.completo = false;
+    avv(`${senza.length} voce/i senza importo (es. tariffa oraria non impostata): il lordo è incompleto.`);
+  }
+  const somma = (arr) => round2(arr.reduce((s, v) => s + (Number(v.importo) || 0), 0));
+  const soggette = voci.filter(v => !TIPI_FUORI_BASE.includes(v.tipo) && v.tipo !== "tredicesima");
+  out.lordoBase = somma(soggette);
+  out.indennita = somma(voci.filter(v => TIPI_FUORI_BASE.includes(v.tipo)));
+  out.t13pagata = somma(voci.filter(v => v.tipo === "tredicesima"));
+  if (!voci.length) {
+    out.completo = false;
+    avv("Nessuna voce e nessuna ora in questo mese: lordo zero.");
+  }
+  if (voci.some(v => TIPI_DUBBI.includes(v.tipo))) {
+    avv("Voce «Altro» contata nella base dei contributi.", "info", true);
+  }
+  if (out.t13pagata) {
+    avv(`13ª pagata questo mese: ${fmt(out.t13pagata)} CHF. Non aumenta il costo: è già maturata mese per mese.`, "info");
+  }
+
+  // 13ª maturata (tutti)
+  const p13 = P.uno.tredicesima_ore;
+  if (p13 && out.lordoBase) {
+    out.tredicesima = { importo: round2(out.lordoBase * p13.valore / 100), det: `${fmtPct(p13.valore)} di ${fmt(out.lordoBase)}`, stato: p13.stato, nome: "13ª maturata nel mese" };
+  }
+  if (!inp.tipo_salario) {
+    avv("Tipo di salario non impostato nell'anagrafica paghe.");
+    out.completo = false;
+  }
+  out.lordo = round2(out.lordoBase + (out.tredicesima ? out.tredicesima.importo : 0));
+
+  // Salario minimo CCL (solo avviso)
+  const mensile = somma(voci.filter(v => v.tipo === "salario_mensile"));
+  for (const a of controllaMinimo(inp, P, mensile)) out.avvisi.push(a);
+
+  // Oneri sociali a carico della ditta
+  for (const cod of ONERI) {
+    const p = P.uno[cod];
+    if (!p) continue;
+    let base = out.lordo, notaTetto = "";
+    if (p.tetto_annuo != null) {
+      const t = round2(p.tetto_annuo / 12);
+      if (base > t) { base = t; notaTetto = " (tetto mensile)"; }
+    }
+    out.righe.push({ codice: cod, nome: p.nome, det: `${fmtPct(p.valore)} di ${fmt(base)}${notaTetto}`, importo: round2(base * p.valore / 100), stato: p.stato });
+  }
+
+  // LPP
+  out.eta = etaNelAnno(inp.data_nascita, inp.anno);
+  const lpp = LPP_UNO.map(c => P.uno[c]);
+  if (out.lordo > 0) {
+    if (out.eta == null) {
+      out.completo = false;
+      avv("Manca la data di nascita (Anagrafiche → Persone → dati personali): LPP e ferie non calcolate.");
+    } else if (lpp.every(Boolean)) {
+      const [soglia, deduz, salMax, coordMin, quota, rischio] = lpp;
+      const fAcc = fasciaPer(P, "lpp_accredito", out.eta);
+      const fRis = fasciaPer(P, "lpp_rischio_dovuto", out.eta);
+      const annuo = round2(out.lordo * 12);
+      if (!fAcc || !fRis) {
+        out.completo = false;
+        avv(`Nessuna fascia LPP per l'età ${out.eta}: LPP non calcolata.`);
+      } else if (annuo < soglia.valore) {
+        avv(`LPP: salario annuo stimato ${fmt(annuo)} sotto la soglia d'entrata: niente LPP.`, "info");
+      } else {
+        const coord = round2(Math.max(Math.min(annuo, salMax.valore) - deduz.valore, coordMin.valore));
+        const daVer = (...xs) => xs.some(x => x && x.stato === "da_verificare") ? "da_verificare" : "verificato";
+        const statoBase = daVer(soglia, deduz, salMax, coordMin);
+        if (fAcc.valore > 0) {
+          out.righe.push({ codice: "lpp_accredito", nome: `LPP accredito di vecchiaia, quota ditta (età ${out.eta})`,
+            det: `${fmtPct(fAcc.valore)} × ${fmtPct(quota.valore)} di coordinato ${fmt(coord)}/anno, ÷ 12`,
+            importo: round2(coord * fAcc.valore / 100 * quota.valore / 100 / 12),
+            stato: daVer(fAcc, quota) === "da_verificare" || statoBase === "da_verificare" ? "da_verificare" : "verificato" });
+        } else {
+          avv(`LPP: a ${out.eta} anni nessun accredito di vecchiaia.`, "info");
+        }
+        if (Number(fRis.valore) === 1) {
+          out.righe.push({ codice: "lpp_rischio_azienda", nome: "LPP rischio e spese, quota ditta",
+            det: `${fmtPct(rischio.valore)} di coordinato ${fmt(coord)}/anno, ÷ 12`,
+            importo: round2(coord * rischio.valore / 100 / 12),
+            stato: daVer(fRis, rischio) === "da_verificare" || statoBase === "da_verificare" ? "da_verificare" : "verificato" });
+        } else {
+          avv(`LPP: a ${out.eta} anni nessun premio di rischio.`, "info");
+        }
+      }
+    }
+  }
+
+  // Ferie maturate (informazione, non entra nel costo)
+  if (out.eta != null) {
+    const f = fasciaPer(P, "ferie_settimane", out.eta);
+    if (f) out.ferie = { settimane: f.valore, giorniMese: round2(f.valore * 5 / 12), stato: f.stato };
+  }
+
+  out.contributi = round2(out.righe.reduce((s, r) => s + r.importo, 0));
+  out.costo = round2(out.lordo + out.indennita + out.contributi);
+  return out;
+}
+
+// HTML del dettaglio di una persona (usato nel mese e nel periodo)
+function htmlCosto(c) {
+  const st = (s) => s === "da_verificare" ? "<br>" + VERIF : "";
+  let h = `<div class="riga"><span class="sx">Salario del mese<span class="det">voci soggette a contributi</span></span><span class="dx">${fmt(c.lordoBase)}</span></div>`;
+  if (c.tredicesima) {
+    h += `<div class="riga"><span class="sx">${esc(c.tredicesima.nome)}<span class="det">${esc(c.tredicesima.det)}</span>${st(c.tredicesima.stato)}</span><span class="dx">${fmt(c.tredicesima.importo)}</span></div>`;
+  }
+  h += `<div class="riga"><span class="sx"><b>Lordo soggetto</b><span class="det">base dei contributi</span></span><span class="dx"><b>${fmt(c.lordo)}</b></span></div>`;
+  h += `<div class="sottotitolo">Contributi a carico della ditta</div>`;
+  if (!c.righe.length) h += `<div class="msg err">Nessun contributo calcolato (vedi avvisi).</div>`;
+  for (const r of c.righe) {
+    h += `<div class="riga"><span class="sx">${esc(r.nome)}<span class="det">${esc(r.det)}</span>${st(r.stato)}</span><span class="dx">${fmt(r.importo)}</span></div>`;
+  }
+  h += `<div class="riga"><span class="sx">Totale contributi ditta</span><span class="dx">${fmt(c.contributi)}</span></div>`;
+  if (c.indennita) {
+    h += `<div class="riga"><span class="sx">Indennità forfettarie (trasferta / pasto)<span class="det">fuori dalla base dei contributi</span>${"<br>" + VERIF}</span><span class="dx">${fmt(c.indennita)}</span></div>`;
+  }
+  h += `<div class="riga totale"><span class="sx">Costo per la ditta</span><span class="dx">${fmt(c.costo)} CHF</span></div>`;
+  if (c.ferie) {
+    h += `<div class="msg info">🏖️ Ferie: ${fmt(c.ferie.settimane)} settimane l'anno → ${fmt(c.ferie.giorniMese)} giorni maturati nel mese${c.ferie.stato === "da_verificare" ? "<br>" + VERIF : ""}</div>`;
+  }
+  for (const a of c.avvisi) h += `<div class="msg ${a.tipo === "info" ? "info" : "err"}">${a.tipo === "info" ? "ℹ️" : "⚠️"} ${esc(a.testo)}${a.verif ? "<br>" + VERIF : ""}</div>`;
+  if (!c.completo) h += `<div class="msg err">⚠️ Stima INCOMPLETA: mancano dati (vedi sopra).</div>`;
+  return h;
+}
+
+// ======================================================================
+// LETTURE
+// ======================================================================
+function erroreTabella(e) {
+  const t = ((e && e.code) || "") + " " + ((e && e.message) || "");
+  return /42P01|PGRST205|does not exist|schema cache/i.test(t);
+}
+async function leggiParametri() {
+  const { data, error } = await sb.from("tm_paghe_parametri")
+    .select("codice,nome,gruppo,valore,unita,base,tetto_annuo,eta_da,eta_a,categoria,anni_esperienza,chi_paga,stato,fonte,nota,valido_dal");
+  if (error) {
+    if (erroreTabella(error)) throw new Error("Tabella dei parametri (tm_paghe_parametri) mancante nel database: i contributi non si possono calcolare. Avvisa il Direttore.");
+    throw error;
+  }
+  if (!data || !data.length) throw new Error("Nessun parametro leggibile (tabella vuota o accesso negato: solo il titolare vede Paghe). I contributi non si possono calcolare.");
+  return data;
+}
+async function leggiPersona(operaio_id) {
+  const [an, dp, op] = await Promise.all([
+    sb.from("tm_paghe_anagrafica").select("operaio_id,tipo_salario,tariffa,percentuale_occupazione").eq("operaio_id", operaio_id).maybeSingle(),
+    sb.from("operai_dati_personali").select("operaio_id,data_nascita,permesso_tipo").eq("operaio_id", operaio_id).maybeSingle(),
+    sb.from("operai").select("id,ruolo,data_assunzione").eq("id", operaio_id).maybeSingle()
+  ]);
+  if (an.error) throw an.error;
+  if (dp.error) throw dp.error;
+  if (op.error) throw op.error;
+  return { anag: an.data, dati: dp.data, op: op.data };
+}
+// Tariffe dell'indennità pasto: impostazioni dell'App Cantieri (sola lettura). Nessun valore scritto qui.
+async function leggiTariffePasti() {
+  const { data, error } = await sb.from("impostazioni").select("chiave,valore").in("chiave", ["pasti_abilitati", "pasto_carpentiere", "pasto_lattoniere"]);
+  if (error) throw error;
+  const m = Object.fromEntries((data || []).map(r => [r.chiave, r.valore]));
+  const n = (x) => (x != null && x !== "" && !isNaN(parseFloat(x))) ? parseFloat(x) : null;
+  return { abilitati: m.pasti_abilitati === "1", carpentiere: n(m.pasto_carpentiere), lattoniere: n(m.pasto_lattoniere) };
+}
+// stessa regola dell'App Cantieri: ruolo con «lattoniere» → tariffa lattoniere, altrimenti carpentiere
+function tariffaPasto(ruolo, T) {
+  if (!T || !T.abilitati) return null;
+  return String(ruolo || "").toLowerCase().includes("lattoniere") ? T.lattoniere : T.carpentiere;
+}
+
+// ======================================================================
+// SCHEDA «COSTO DEL MESE»
+// ======================================================================
+function mostraScheda(n) {
+  $("schedaCosto").classList.toggle("hidden", n !== "costo");
+  $("schedaRegistra").classList.toggle("hidden", n !== "registra");
+  $("tabCosto").classList.toggle("attiva", n === "costo");
+  $("tabRegistra").classList.toggle("attiva", n === "registra");
+}
+
+async function calcolaMese() {
+  const anno = parseInt($("cAnno").value, 10), mese = parseInt($("cMese").value, 10);
+  $("costoMsg").innerHTML = `<div class="msg info">Calcolo in corso…</div>`;
+  $("costoRiepilogo").innerHTML = ""; $("costoPersone").innerHTML = ""; $("costoAgenzia").innerHTML = ""; $("costoParametri").innerHTML = "";
+  if (!anno || !mese) { $("costoMsg").innerHTML = `<div class="msg err">Scegli anno e mese.</div>`; return; }
+  try {
+    const parRighe = await leggiParametri();
+    const P = scegliParametri(parRighe, anno, mese);
+
+    const { data: tutti, error: eo } = await sb.from("operai").select("id,nome,cognome,ruolo,agenzia,nome_agenzia,data_assunzione")
+      .eq("attivo", true).eq("rapporto", "dipendente").order("cognome");
+    if (eo) throw new Error(erroreRapporto(eo) || eo.message);
+    if (!tutti || !tutti.length) throw new Error("Nessun dipendente trovato (accesso negato o dati mancanti). Entra con l'account del titolare.");
+    const ops = tutti.filter(o => o.agenzia !== true);       // buste nostre
+    const agenz = tutti.filter(o => o.agenzia === true);     // busta fatta dall'agenzia
+    const ids = tutti.map(o => o.id);
+
+    const { start, end } = meseRange(anno, mese);
+    const [rPer, rAn, rDp, rGio] = await Promise.all([
+      sb.from("tm_paghe_periodo").select("id,operaio_id,stato").eq("anno", anno).eq("mese", mese).in("operaio_id", ids),
+      sb.from("tm_paghe_anagrafica").select("operaio_id,tipo_salario,tariffa,percentuale_occupazione").in("operaio_id", ids),
+      sb.from("operai_dati_personali").select("operaio_id,data_nascita,permesso_tipo").in("operaio_id", ids),
+      sb.from("giornate").select("operaio_id,data,ore_totali,ore_straordinari,pasto_riconosciuto").in("operaio_id", ids).gte("data", start).lte("data", end)
+    ]);
+    for (const r of [rPer, rAn, rDp, rGio]) if (r.error) throw r.error;
+    let TP = null, errPasti = null;
+    try { TP = await leggiTariffePasti(); } catch (e) { errPasti = e.message || String(e); }
+    const per = rPer.data || [];
+    let vociMese = [];
+    if (per.length) {
+      const rV = await sb.from("tm_paghe_voce").select("periodo_id,tipo,importo").in("periodo_id", per.map(p => p.id));
+      if (rV.error) throw rV.error;
+      vociMese = rV.data || [];
+    }
+    const byOp = (arr) => Object.fromEntries((arr || []).map(x => [x.operaio_id, x]));
+    const mPer = byOp(per), mAn = byOp(rAn.data), mDp = byOp(rDp.data);
+    const gioDi = (id) => (rGio.data || []).filter(g => g.operaio_id === id);
+
+    const risultati = ops.map(o => {
+      const an = mAn[o.id] || null, dp = mDp[o.id] || null, p = mPer[o.id] || null;
+      let vv, origine, extra = [];
+      if (p) {
+        vv = vociMese.filter(v => v.periodo_id === p.id);
+        origine = `Voci del periodo (${p.stato === "chiuso" ? "chiuso" : "aperto"})`;
+      } else {
+        const gg = gioDi(o.id);
+        const ore = round2(gg.reduce((s, g) => s + (Number(g.ore_totali) || 0), 0));
+        const pasti = gg.filter(g => g.pasto_riconosciuto === true).length;
+        origine = "Periodo non aperto: stima dalle ore del Cantiere";
+        vv = [];
+        if (ore > 0) {
+          const imp = an && an.tipo_salario === "orario" && an.tariffa != null ? round2(ore * Number(an.tariffa)) : null;
+          vv.push({ tipo: "ore_ordinarie", importo: imp });
+          extra.push({ testo: `${fmt(ore)} ore dal Cantiere${imp == null ? " (manca la tariffa oraria o il dipendente è mensile: apri il periodo)" : " × tariffa"}.`, tipo: imp == null ? "err" : "info" });
+        }
+        if (pasti > 0) {
+          const tar = tariffaPasto(o.ruolo, TP);
+          vv.push({ tipo: "indennita_trasferta", importo: tar == null ? null : round2(pasti * tar) });
+          extra.push({ testo: `${pasti} pasti riconosciuti dal Cantiere${tar == null ? " (tariffa pasto non impostata nell'App Cantieri)" : ""}.`, tipo: tar == null ? "err" : "info" });
+        }
+      }
+      const c = calcolaCosto({ anno, mese, voci: vv, tipo_salario: an ? an.tipo_salario : null, tariffa: an ? an.tariffa : null,
+        occupazione: an ? an.percentuale_occupazione : null, data_nascita: dp ? dp.data_nascita : null,
+        ruolo: o.ruolo, data_assunzione: o.data_assunzione }, P);
+      if (!an) { c.completo = false; c.avvisi.unshift({ testo: "Anagrafica paghe mancante (tipo di salario e tariffa).", tipo: "err" }); }
+      c.avvisi.unshift(...extra);
+      return { o, c, origine, permesso: dp ? dp.permesso_tipo : null };
+    });
+
+    const T = risultati.reduce((s, r) => ({ lordo: s.lordo + r.c.lordo, ind: s.ind + r.c.indennita, contr: s.contr + r.c.contributi, costo: s.costo + r.c.costo }), { lordo: 0, ind: 0, contr: 0, costo: 0 });
+    const incompleti = risultati.filter(r => !r.c.completo).length;
+    const sottoMin = risultati.filter(r => r.c.avvisi.some(a => a.sottoMinimo)).length;
+    const daVer = risultati.some(r => r.c.righe.some(x => x.stato === "da_verificare") || (r.c.tredicesima && r.c.tredicesima.stato === "da_verificare"));
+    $("costoMsg").innerHTML = "";
+    $("costoRiepilogo").innerHTML = `<div class="riepilogo">
+      <div class="muted">Costo del personale · ${MESI[mese - 1]} ${anno} · ${risultati.length} dipendenti${agenz.length ? " · " + agenz.length + " in agenzia a parte" : ""}</div>
+      <div class="grande">${fmt(round2(T.costo))} CHF</div>
+      <div class="riga"><span class="sx">Lordo soggetto totale</span><span class="dx">${fmt(round2(T.lordo))}</span></div>
+      <div class="riga"><span class="sx">Contributi ditta totali</span><span class="dx">${fmt(round2(T.contr))}</span></div>
+      ${T.ind ? `<div class="riga"><span class="sx">Indennità forfettarie</span><span class="dx">${fmt(round2(T.ind))}</span></div>` : ""}
+      ${daVer ? `<div style="margin-top:6px">${VERIF} <span class="muted">alcune percentuali</span></div>` : ""}
+      ${incompleti ? `<div class="msg err">⚠️ ${incompleti} dipendente/i con stima INCOMPLETA: apri il nome per vedere cosa manca.</div>` : ""}
+      ${sottoMin ? `<div class="msg err">⚠️ ${sottoMin} dipendente/i sotto il minimo CCL: apri il nome.</div>` : ""}
+    </div>`;
+    $("costoPersone").innerHTML = risultati.length ? risultati.map(r => `
+      <details class="persona"${r.c.completo && !r.c.avvisi.some(a => a.sottoMinimo) ? "" : " open"}>
+        <summary><span><span class="nome">${esc((r.o.cognome || "") + " " + (r.o.nome || ""))}</span><br><span class="muted">${r.c.eta != null ? "età " + r.c.eta : "età ?"}${r.permesso ? " · permesso " + esc(r.permesso) : ""}${r.c.completo ? "" : " · ⚠️ incompleta"}${r.c.avvisi.some(a => a.sottoMinimo) ? " · ⚠️ sotto minimo" : ""}</span></span>
+          <span class="cifra">${fmt(r.c.costo)}</span></summary>
+        <div class="corpo"><div class="muted">${esc(r.origine)}</div>${htmlCosto(r.c)}</div>
+      </details>`).join("") : `<div class="msg info">Nessun dipendente con busta nostra: sono tutti in agenzia.</div>`;
+    $("costoAgenzia").innerHTML = htmlAgenzia(agenz, gioDi, TP, errPasti, mese, anno);
+    $("costoParametri").innerHTML = htmlParametri(P);
+  } catch (e) {
+    $("costoMsg").innerHTML = `<div class="msg err">⚠️ ${esc(e.message || e)}</div>`;
+  }
+}
+
+// Persone in agenzia: la busta la fa l'agenzia. Qui solo ore e pasti da mandare, per controllare la fattura.
+function riepilogoAgenzia(gg, ruolo, TP) {
+  const ore = round2(gg.reduce((s, g) => s + (Number(g.ore_totali) || 0), 0));
+  const str = round2(gg.reduce((s, g) => s + (Number(g.ore_straordinari) || 0), 0));
+  const giorni = new Set(gg.map(g => g.data)).size;
+  const pasti = gg.filter(g => g.pasto_riconosciuto === true).length;
+  const tar = tariffaPasto(ruolo, TP);
+  return { ore, str, giorni, pasti, tar, importoPasti: tar == null ? null : round2(pasti * tar) };
+}
+function htmlAgenzia(agenz, gioDi, TP, errPasti, mese, anno) {
+  if (!agenz.length) return "";
+  let h = `<div class="card"><div class="nome" style="font-weight:800;font-size:18px">👷 Agenzia — da mandare all'agenzia</div>
+    <div class="muted">${MESI[mese - 1]} ${anno} · ore e pasti dal Cantiere. Il costo di queste persone per la ditta è la fattura dell'agenzia (fuori da Paghe): qui non c'è nessun contributo.</div>`;
+  if (errPasti) h += `<div class="msg err">⚠️ Tariffe pasto non leggibili: ${esc(errPasti)}</div>`;
+  else if (TP && !TP.abilitati) h += `<div class="msg info">ℹ️ Indennità pasti non attive nell'App Cantieri.</div>`;
+  for (const o of agenz) {
+    const r = riepilogoAgenzia(gioDi(o.id), o.ruolo, TP);
+    h += `<div class="persona" style="padding:10px 14px">
+      <div class="nome" style="font-weight:700">${esc((o.cognome || "") + " " + (o.nome || ""))}</div>
+      <div class="muted">${o.nome_agenzia ? "Agenzia: " + esc(o.nome_agenzia) : "⚠️ nome dell'agenzia non indicato (Anagrafiche)"}</div>
+      <div class="riga"><span class="sx">Giorni lavorati</span><span class="dx">${r.giorni}</span></div>
+      <div class="riga"><span class="sx">Ore lavorate</span><span class="dx">${fmt(r.ore)} h</span></div>
+      <div class="riga"><span class="sx">Straordinari segnati</span><span class="dx">${fmt(r.str)} h</span></div>
+      <div class="riga"><span class="sx">Pasti riconosciuti${r.tar != null ? `<span class="det">${r.pasti} × ${fmt(r.tar)} CHF</span>` : ""}</span><span class="dx">${r.pasti}${r.importoPasti != null ? " = " + fmt(r.importoPasti) + " CHF" : ""}</span></div>
+      ${r.giorni === 0 ? `<div class="msg info">ℹ️ Nessuna giornata nel Cantiere in questo mese.</div>` : ""}
+      ${r.pasti > 0 && r.tar == null ? `<div class="msg err">⚠️ Tariffa pasto non impostata nell'App Cantieri: importo pasti da calcolare.</div>` : ""}
+    </div>`;
+  }
+  return h + `</div>`;
+}
+
+function htmlParametri(P) {
+  const tutte = [...Object.values(P.uno), ...Object.values(P.fasce).flat(), ...Object.values(P.minimi || {}).flatMap(o => Object.values(o))];
+  const dv = tutte.filter(r => r.stato === "da_verificare");
+  const nomi = [...new Set(dv.map(r => r.gruppo === "lpp_eta" ? "Accrediti LPP per età" : r.gruppo === "ferie_eta" ? "Ferie per età"
+                                     : r.codice === "ccl_min_mensile" ? "Salari minimi CCL" : r.nome))];
+  return `<details class="persona"><summary><span><span class="nome">📋 Parametri usati</span><br><span class="muted">${tutte.length} valori validi al ${esc(P.giorno.split("-").reverse().join("."))} · ${dv.length} da verificare</span></span></summary>
+    <div class="corpo">
+      ${nomi.length ? `<div class="sottotitolo">Da verificare col fiduciario</div>` + nomi.map(n => `<div class="riga"><span class="sx">${esc(n)}<br>${VERIF}</span></div>`).join("") : ""}
+      <div class="muted" style="margin-top:8px">Fonte: foglio PARAMETRI del file costi di Umberto, caricato nel database. Per cambiarli si aggiorna il file e si ricarica (Direttore).</div>
+    </div></details>`;
 }
 
 // ---- AUTH ----
@@ -162,7 +660,7 @@ async function login() {
   $("authMsg").innerHTML = "";
   try {
     const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
-    if (error) { $("authMsg").innerHTML = `<div class="msg err">${error.message}</div>`; return; }
+    if (error) { $("authMsg").innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
     showApp();
   } catch (e) { $("authMsg").innerHTML = `<div class="msg err">Errore di accesso</div>`; }
 }
@@ -171,9 +669,12 @@ async function logout() { try { await sb.auth.signOut(); } catch (e) {} showLogi
 // ---- CONTROLS ----
 function initControls() {
   const now = new Date();
+  // Costo del mese: di base il mese scorso (il mese chiuso più recente)
+  const prec = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   $("inAnno").value = now.getFullYear();
-  const mesi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-  $("selMese").innerHTML = mesi.map((m, i) => `<option value="${i + 1}" ${i === now.getMonth() ? "selected" : ""}>${m}</option>`).join("");
+  $("selMese").innerHTML = MESI.map((m, i) => `<option value="${i + 1}" ${i === now.getMonth() ? "selected" : ""}>${m}</option>`).join("");
+  $("cAnno").value = prec.getFullYear();
+  $("cMese").innerHTML = MESI.map((m, i) => `<option value="${i + 1}" ${i === prec.getMonth() ? "selected" : ""}>${m}</option>`).join("");
 }
 // Solo i Dipendenti hanno la busta paga: gli Esterni (rapporto = 'esterno') non compaiono mai.
 function erroreRapporto(e) {
@@ -192,27 +693,31 @@ async function loadOperai() {
   $("avvisoOperai").innerHTML = "";
   $("selOperaio").disabled = false;
   try {
-    const { data, error } = await sb.from("operai").select("id,nome,cognome")
+    const { data: tutti, error } = await sb.from("operai").select("id,nome,cognome,agenzia")
       .eq("attivo", true).eq("rapporto", "dipendente").order("cognome");
     if (error) throw error;
-    if (!data || data.length === 0) {
+    if (!tutti || tutti.length === 0) {
       // zero dipendenti non e' un caso normale: errore a schermo, mai un elenco vuoto in silenzio
       erroreOperai("Nessun dipendente trovato. Può essere un problema di accesso (solo il titolare vede Paghe) o i dati mancano. Controlla di essere entrato con l'account giusto.");
       return;
     }
-    $("selOperaio").innerHTML = data.map(o => `<option value="${o.id}">${o.cognome || ""} ${o.nome || ""}</option>`).join("");
+    // chi è in agenzia non ha una busta nostra (la fa l'agenzia): non si registra qui
+    const data = tutti.filter(o => o.agenzia !== true);
+    if (!data.length) { erroreOperai("Tutti i dipendenti sono in agenzia: la busta la fa l'agenzia. Vedi «Costo del mese» → Agenzia."); return; }
+    $("selOperaio").innerHTML = data.map(o => `<option value="${esc(o.id)}">${esc(o.cognome || "")} ${esc(o.nome || "")}</option>`).join("");
   } catch (e) {
-    erroreOperai(erroreRapporto(e) || ("Errore nel caricare le persone: " + (e.message || e)));
+    erroreOperai(erroreRapporto(e) || ("Errore nel caricare le persone: " + esc(e.message || e)));
   }
 }
 
 // Controllo in piu' (anche se qualcuno apre una scheda per id): la persona deve essere un Dipendente.
-// Ritorna true solo se rapporto = 'dipendente'. Lancia errore se la lettura fallisce o la colonna manca.
+// Ritorna true solo se rapporto = 'dipendente' e NON in agenzia (busta dell'agenzia).
+// Lancia errore se la lettura fallisce o la colonna manca.
 async function verificaDipendente(operaio_id) {
-  const { data, error } = await sb.from("operai").select("id,rapporto").eq("id", operaio_id).maybeSingle();
+  const { data, error } = await sb.from("operai").select("id,rapporto,agenzia").eq("id", operaio_id).maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Persona non trovata o non accessibile.");
-  return data.rapporto === "dipendente";
+  return data.rapporto === "dipendente" && data.agenzia !== true;
 }
 
 // ---- PERIODO ----
@@ -220,10 +725,10 @@ async function apriPeriodo() {
   const operaio_id = $("selOperaio").value;
   const anno = parseInt($("inAnno").value, 10);
   const mese = parseInt($("selMese").value, 10);
-  if (!operaio_id || !anno || !mese) { alert("Seleziona operaio, anno e mese."); return; }
+  if (!operaio_id || !anno || !mese) { alert("Seleziona dipendente, anno e mese."); return; }
   try {
     if (!(await verificaDipendente(operaio_id))) {
-      alert("Questa persona non è un Dipendente: per gli Esterni non esiste busta paga.");
+      alert("Questa persona non ha una busta paga nostra: per gli Esterni non esiste busta paga, per chi è in agenzia la fa l'agenzia.");
       return;
     }
     const { data, error } = await sb.from("tm_paghe_periodo")
@@ -243,8 +748,8 @@ async function renderPeriodo() {
   const nomeOp = $("selOperaio").options[$("selOperaio").selectedIndex]?.text || "";
   $("periodoTitolo").textContent = `${nomeOp} — ${$("selMese").options[$("selMese").selectedIndex].text} ${periodo.anno}`;
   const chiuso = periodo.stato === "chiuso";
-  $("periodoStato").innerHTML = `<span class="badge ${chiuso ? "chiuso" : "aperto"}">${chiuso ? "CHIUSO" : "APERTO"}</span>`;
-  $("btnStato").textContent = chiuso ? "Riapri periodo" : "Chiudi periodo";
+  $("periodoStato").innerHTML = `<span class="badge ${chiuso ? "chiuso" : "aperto"}">${chiuso ? "🔒 CHIUSO" : "✏️ APERTO"}</span>`;
+  $("btnStato").textContent = chiuso ? "🔓 Riapri periodo" : "🔒 Chiudi periodo";
   $("addBox").style.display = chiuso ? "none" : "block";
   $("importBar").style.display = chiuso ? "none" : "block";
   $("importInfo").textContent = "";
@@ -263,35 +768,54 @@ async function loadVoci() {
     if (error) throw error;
     voci = data || [];
     renderVoci();
+    await renderCostoPeriodo();
   } catch (e) {
-    msg("Errore nel caricare le voci: " + (e.message || e), false);
+    msg("Errore nel caricare le voci: " + esc(e.message || e), false);
   }
 }
 
 function renderVoci() {
   const chiuso = periodo.stato === "chiuso";
-  $("vociBody").innerHTML = voci.map(v => `
+  $("vociBody").innerHTML = voci.length ? voci.map(v => `
     <tr>
-      <td>${labelTipo(v.tipo)}</td>
-      <td>${v.descrizione || ""}</td>
-      <td class="num">${v.quantita != null ? fmt(v.quantita) : ""}</td>
-      <td>${v.um || ""}</td>
-      <td class="num">${v.importo != null ? fmt(v.importo) : ""}</td>
-      <td class="num">${chiuso ? "" : `<button class="btn danger" style="padding:4px 8px" onclick="deleteVoce('${v.id}')">✕</button>`}</td>
-    </tr>`).join("");
+      <td><b>${esc(labelTipo(v.tipo))}</b></td>
+      <td>${esc(v.descrizione || "")}</td>
+      <td class="num" data-l="Quantità">${v.quantita != null ? fmt(v.quantita) : "—"}</td>
+      <td data-l="UM">${esc(v.um || "")}</td>
+      <td class="num" data-l="Importo CHF">${v.importo != null ? fmt(v.importo) : "⚠️ manca"}</td>
+      <td class="num">${chiuso ? "" : `<button class="btn danger" style="padding:6px 10px;min-height:40px;font-size:15px" onclick="deleteVoce('${esc(v.id)}')">✕ Togli</button>`}</td>
+    </tr>`).join("") : `<tr><td colspan="6"><div class="msg info">Nessuna voce in questo periodo.</div></td></tr>`;
   const tot = voci.reduce((s, v) => s + (Number(v.importo) || 0), 0);
   $("totale").textContent = fmt(tot);
 }
 
+// Costo per la ditta del periodo aperto (stessa regola della scheda «Costo del mese»)
+async function renderCostoPeriodo() {
+  const box = $("costoPeriodo");
+  box.innerHTML = `<div class="muted">Calcolo del costo per la ditta…</div>`;
+  try {
+    const [parRighe, pers] = await Promise.all([leggiParametri(), leggiPersona(periodo.operaio_id)]);
+    const P = scegliParametri(parRighe, periodo.anno, periodo.mese);
+    const c = calcolaCosto({ anno: periodo.anno, mese: periodo.mese, voci, tipo_salario: pers.anag ? pers.anag.tipo_salario : null,
+                             tariffa: pers.anag ? pers.anag.tariffa : null, occupazione: pers.anag ? pers.anag.percentuale_occupazione : null,
+                             data_nascita: pers.dati ? pers.dati.data_nascita : null,
+                             ruolo: pers.op ? pers.op.ruolo : null, data_assunzione: pers.op ? pers.op.data_assunzione : null }, P);
+    if (!pers.anag) { c.completo = false; c.avvisi.unshift({ testo: "Anagrafica paghe mancante (tipo di salario e tariffa).", tipo: "err" }); }
+    box.innerHTML = `<details class="persona" open><summary><span class="nome">💼 Costo per la ditta (stima)</span><span class="cifra">${fmt(c.costo)}</span></summary><div class="corpo">${htmlCosto(c)}</div></details>`;
+  } catch (e) {
+    box.innerHTML = `<div class="msg err">⚠️ Costo per la ditta non calcolato: ${esc(e.message || e)}</div>`;
+  }
+}
+
 function labelTipo(t) {
-  const map = { ore_ordinarie:"Ore ordinarie", straordinari:"Straordinari", indennita_trasferta:"Indennità trasferta", salario_mensile:"Salario mensile", tredicesima:"13ª", premio:"Premio", assenza:"Assenza", correzione:"Correzione", altro:"Altro" };
+  const map = { ore_ordinarie:"Ore ordinarie", straordinari:"Straordinari", indennita_trasferta:"Indennità trasferta/pasto (forfait)", salario_mensile:"Salario mensile", tredicesima:"13ª", premio:"Premio", assenza:"Assenza", correzione:"Correzione", altro:"Altro" };
   return map[t] || t;
 }
 
 async function addVoce() {
   try {
     if (!(await verificaDipendente(periodo.operaio_id))) { msg("Persona non Dipendente: nessuna riga paga.", false); return; }
-  } catch (e) { msg(erroreRapporto(e) || ("Errore nel controllo del rapporto: " + (e.message || e)), false); return; }
+  } catch (e) { msg(erroreRapporto(e) || ("Errore nel controllo del rapporto: " + esc(e.message || e)), false); return; }
   const row = {
     periodo_id: periodo.id,
     tipo: $("vTipo").value,
@@ -307,18 +831,18 @@ async function addVoce() {
     $("vDesc").value = ""; $("vQta").value = ""; $("vUm").value = ""; $("vImp").value = "";
     await loadVoci();
   } catch (e) {
-    msg("Errore nell'aggiungere la voce: " + (e.message || e), false);
+    msg("Errore nell'aggiungere la voce: " + esc(e.message || e), false);
   }
 }
 
 async function deleteVoce(id) {
-  if (!confirm("Eliminare questa voce?")) return;
+  if (!confirm("Togliere questa voce?")) return;
   try {
     const { error } = await sb.from("tm_paghe_voce").delete().eq("id", id);
     if (error) throw error;
     await loadVoci();
   } catch (e) {
-    msg("Errore nell'eliminare la voce: " + (e.message || e), false);
+    msg("Errore nel togliere la voce: " + esc(e.message || e), false);
   }
 }
 
@@ -340,7 +864,7 @@ async function importaOreCantiere() {
     }
     const { start, end } = meseRange(periodo.anno, periodo.mese);
     const { data, error } = await sb.from("giornate")
-      .select("ore_totali")
+      .select("ore_totali,pasto_riconosciuto")
       .eq("operaio_id", periodo.operaio_id)
       .gte("data", start).lte("data", end);
     if (error) throw error;
@@ -356,7 +880,7 @@ async function importaOreCantiere() {
       if (anag && anag.tipo_salario === "orario" && anag.tariffa != null) {
         importo = +(oreTot * Number(anag.tariffa)).toFixed(2);
       } else if (anag && anag.tipo_salario === "mensile") {
-        notaTariffa = " (operaio mensile: ore di riferimento, importo a parte)";
+        notaTariffa = " (dipendente mensile: ore di riferimento, importo a parte)";
       } else {
         notaTariffa = " (tariffa non impostata: importo da compilare)";
       }
@@ -376,11 +900,28 @@ async function importaOreCantiere() {
       const { error: e3 } = await sb.from("tm_paghe_voce").insert(payload).select().single();
       if (e3) throw e3;
     }
-    $("importInfo").textContent = `Importate ${fmt(oreTot)} h da ${righe.length} giornate${notaTariffa}.`;
+    // Indennità pasto (forfait, fuori contributi): giorni con pasto riconosciuto × tariffa dell'App Cantieri
+    let notaPasti = "";
+    const nPasti = righe.filter(g => g.pasto_riconosciuto === true).length;
+    const vPasti = voci.find(v => v.tipo === "indennita_trasferta" && v.origine === "cantiere");
+    if (nPasti > 0 || vPasti) {
+      let tar = null;
+      try {
+        const [TP, rOp] = await Promise.all([leggiTariffePasti(), sb.from("operai").select("ruolo").eq("id", periodo.operaio_id).maybeSingle()]);
+        tar = tariffaPasto(rOp.data ? rOp.data.ruolo : null, TP);
+      } catch (e) { tar = null; }
+      const pp = { periodo_id: periodo.id, tipo: "indennita_trasferta", descrizione: `Indennità pasto da Cantiere (${nPasti} pasti)`,
+                   quantita: nPasti, um: "pasti", importo: tar == null ? null : round2(nPasti * tar), origine: "cantiere" };
+      const r = vPasti ? await sb.from("tm_paghe_voce").update(pp).eq("id", vPasti.id).select().single()
+                       : await sb.from("tm_paghe_voce").insert(pp).select().single();
+      if (r.error) throw r.error;
+      notaPasti = ` · ${nPasti} pasti${tar == null ? " (tariffa pasto non impostata nell'App Cantieri: importo da compilare)" : ""}`;
+    }
+    $("importInfo").textContent = `Importate ${fmt(oreTot)} h da ${righe.length} giornate${notaTariffa}${notaPasti}.`;
     await loadVoci();
   } catch (e) {
     $("importInfo").textContent = "";
-    msg(erroreRapporto(e) || ("Errore import ore: " + (e.message || e)), false);
+    msg(erroreRapporto(e) || ("Errore import ore: " + esc(e.message || e)), false);
   }
 }
 
@@ -395,7 +936,7 @@ async function toggleStato() {
     periodo = data;
     await renderPeriodo();
   } catch (e) {
-    msg("Errore nel cambiare stato: " + (e.message || e), false);
+    msg("Errore nel cambiare stato: " + esc(e.message || e), false);
   }
 }
 
