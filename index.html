@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paghe · Carpenteria Ticinese</title>
 <meta name="theme-color" content="#e0a800">
-<link rel="manifest" href="manifest.json?v=5">
-<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=5">
-<link rel="apple-touch-icon" href="icone/icona-180.png?v=5">
+<link rel="manifest" href="manifest.json?v=6">
+<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=6">
+<link rel="apple-touch-icon" href="icone/icona-180.png?v=6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Paghe">
@@ -82,7 +82,7 @@
 <header>
   <h1>
     <span aria-hidden="true">💰</span>
-    Paghe <small>v5 (4.11.2026)</small>
+    Paghe <small>v6 (4.11.2026)</small>
   </h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
@@ -156,6 +156,7 @@
           <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
         </div>
         <div id="periodoArchivio" style="margin-top:8px"></div>
+        <div id="avvisoChiusura" style="margin-top:8px"></div>
 
         <div id="importBar" style="margin-top:10px">
           <button class="btn sec" onclick="importaOreCantiere()">⟳ Ricarica ore dal Cantiere</button>
@@ -285,13 +286,43 @@ function etaNelAnno(dataNascita, anno) {
   return m ? anno - parseInt(m[1], 10) : null;
 }
 
-// Anni pieni fra la data di assunzione e il primo giorno del mese (massimo 10 = «10 e più"); null se manca la data
-function anniDaAssunzione(dataAssunzione, anno, mese) {
+// Anni pieni fra la data di assunzione e il primo giorno del mese (massimo 10 = «10 e più"); null se manca la data.
+// periodi = periodi di rapporto chiusi (dopo un «Riattiva»): si sommano, il buco fra due periodi non conta.
+// Serve solo all'avviso del minimo CCL: i soldi non passano di qui.
+function anniDaAssunzione(dataAssunzione, anno, mese, periodi, fineAttuale) {
+  if (periodi && periodi.length) return anniDiServizio(dataAssunzione, anno, mese, periodi, fineAttuale);
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dataAssunzione || ""));
   if (!m) return null;
   let a = anno - parseInt(m[1], 10);
   if (mese < parseInt(m[2], 10) || (mese === parseInt(m[2], 10) && parseInt(m[3], 10) > 1)) a -= 1;
   return Math.max(0, Math.min(10, a));
+}
+
+// Mesi pieni e giorni di resto fra due date «AAAA-MM-GG» (la seconda esclusa)
+function mesiEGiorni(da, a) {
+  const [y1, m1, d1] = da.split("-").map(Number), [y2, m2, d2] = a.split("-").map(Number);
+  let mesi = (y2 - y1) * 12 + (m2 - m1);
+  if (d2 < d1) mesi -= 1;
+  const giorni = Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1 + mesi, d1)) / 86400000);
+  return [mesi, Math.max(0, giorni)];
+}
+// Somma i tratti lavorati fino al primo giorno del mese SCELTO (non oggi). Un periodo vecchio senza data di fine non si
+// conta: non si sa quanto è durato. Se due tratti si sovrappongono, il pezzo comune conta una volta sola.
+function anniDiServizio(dataAssunzione, anno, mese, periodi, fineAttuale) {
+  const primo = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const iso = (x) => x ? String(x).slice(0, 10) : null;
+  const tratti = periodi.filter(p => p.data_inizio && p.data_fine).map(p => [iso(p.data_inizio), giornoDopo(iso(p.data_fine))]);
+  if (dataAssunzione) tratti.push([iso(dataAssunzione), fineAttuale ? giornoDopo(iso(fineAttuale)) : primo]);
+  tratti.sort((x, y) => (x[0] < y[0] ? -1 : 1));
+  let mesi = 0, giorni = 0, finora = "";
+  for (let [da, a] of tratti) {
+    if (a > primo) a = primo;
+    if (da < finora) da = finora;
+    if (da >= a) continue;
+    const [m, g] = mesiEGiorni(da, a);
+    mesi += m; giorni += g; finora = a;
+  }
+  return Math.max(0, Math.min(10, Math.floor((mesi + Math.floor(giorni / 30)) / 12)));
 }
 
 // Avviso (mai blocco) se la paga è sotto il salario minimo CCL.
@@ -300,7 +331,7 @@ function controllaMinimo(inp, P, mensile) {
   const avvisi = [];
   const cats = Object.keys(P.minimi || {});
   if (!cats.length) return [{ testo: "Salari minimi CCL non caricati: controllo del minimo non fatto.", tipo: "info" }];
-  const anni = anniDaAssunzione(inp.data_assunzione, inp.anno, inp.mese);
+  const anni = anniDaAssunzione(inp.data_assunzione, inp.anno, inp.mese, inp.periodi, inp.data_fine_rapporto);
   const anniUsati = anni == null ? 0 : anni;
   const ruolo = String(inp.ruolo || "").trim();
   let cat = cats.find(c => c.toLowerCase() === ruolo.toLowerCase()) || null;
@@ -316,7 +347,7 @@ function controllaMinimo(inp, P, mensile) {
     cat = minRiga ? minRiga.categoria : null;
   }
   if (!minRiga) return avvisi.concat([{ testo: "Salario minimo CCL non trovato per questa categoria/anni.", tipo: "info" }]);
-  const quandoAnni = anni == null ? "0 anni di esperienza (data di assunzione mancante)" : `almeno ${anniUsati}${anniUsati === 10 ? "+" : ""} anni (dalla data di assunzione)`;
+  const quandoAnni = anni == null ? "0 anni di esperienza (data di assunzione mancante)" : `almeno ${anniUsati}${anniUsati === 10 ? "+" : ""} anni (${inp.periodi && inp.periodi.length ? "periodi di lavoro sommati" : "dalla data di assunzione"})`;
   const occ = Number(inp.occupazione) > 0 ? Number(inp.occupazione) : 100;
   if (inp.tipo_salario === "orario" && inp.tariffa != null) {
     const ore = P.uno.ccl_ore_annue;
@@ -517,9 +548,19 @@ function ultimoMeseScrivibile(o) {
   const [a, m] = fineRapporto(o).split("-").map(Number);
   return `${MESI[m - 1]} ${a}`;
 }
+// Il mese tocca un periodo di lavoro? Serve solo a chi ha periodi vecchi (dopo un «Riattiva»).
+function nelRapporto(o, periodi, anno, mese) {
+  const m = String(mese).padStart(2, "0");
+  const primo = `${anno}-${m}-01`, ultimo = `${anno}-${m}-${String(new Date(Date.UTC(anno, mese, 0)).getUTCDate()).padStart(2, "0")}`;
+  const iso = (x) => x ? String(x).slice(0, 10) : null;
+  const tocca = (da, a) => (!da || iso(da) <= ultimo) && (!a || iso(a) >= primo);
+  const attuale = o.attivo === false && !fineRapporto(o) ? false : tocca(o.data_assunzione, o.data_fine_rapporto);
+  return attuale || periodi.some(p => tocca(p.data_inizio, p.data_fine));
+}
 // Chi conta nel Costo del mese scelto. haDati = ha un periodo o ore in quel mese: i dati non spariscono mai.
-function presenteNelMese(o, anno, mese, haDati) {
+function presenteNelMese(o, anno, mese, haDati, periodi) {
   if (haDati) return true;
+  if (periodi && periodi.length) return nelRapporto(o, periodi, anno, mese);
   if (fineRapporto(o)) return !uscitoPrimaDelMese(o, anno, mese);
   return o.attivo !== false;
 }
@@ -541,16 +582,37 @@ async function leggiParametri() {
   if (!data || !data.length) throw new Error("Nessun parametro leggibile (tabella vuota o accesso negato: solo il titolare vede Paghe). I contributi non si possono calcolare.");
   return data;
 }
+// Periodi di rapporto chiusi (ANAG_10), solo le date. Servono all'avviso del minimo e ai mesi del buco, mai ai soldi.
+// Tabella assente (database senza ANAG_10): si conta come prima, nessun errore a schermo, una sola prova per pagina.
+let periodiTabellaAssente = false;
+async function leggiPeriodiRapporto(ids) {
+  if (periodiTabellaAssente || !ids.length) return { per: {}, errore: null };
+  try {
+    const { data, error } = await sb.from("anag_periodi_rapporto").select("operaio_id,data_inizio,data_fine").in("operaio_id", ids);
+    if (error) {
+      if (erroreTabella(error)) { periodiTabellaAssente = true; return { per: {}, errore: null }; }
+      return { per: {}, errore: error.message || String(error) };
+    }
+    const per = {};
+    for (const r of (data || [])) (per[r.operaio_id] = per[r.operaio_id] || []).push(r);
+    return { per, errore: null };
+  } catch (e) {
+    return { per: {}, errore: e.message || String(e) };
+  }
+}
+const AVVISO_PERIODI = "Periodi vecchi non letti: anni di servizio contati dalla data di assunzione. I soldi non cambiano.";
+
 async function leggiPersona(operaio_id) {
-  const [an, dp, op] = await Promise.all([
+  const [an, dp, op, pr] = await Promise.all([
     sb.from("tm_paghe_anagrafica").select("operaio_id,tipo_salario,tariffa,percentuale_occupazione").eq("operaio_id", operaio_id).maybeSingle(),
     sb.from("operai_dati_personali").select("operaio_id,data_nascita,permesso_tipo").eq("operaio_id", operaio_id).maybeSingle(),
-    sb.from("operai").select("id,ruolo,data_assunzione").eq("id", operaio_id).maybeSingle()
+    sb.from("operai").select("id,ruolo,data_assunzione,data_fine_rapporto").eq("id", operaio_id).maybeSingle(),
+    leggiPeriodiRapporto([operaio_id])
   ]);
   if (an.error) throw an.error;
   if (dp.error) throw dp.error;
   if (op.error) throw op.error;
-  return { anag: an.data, dati: dp.data, op: op.data };
+  return { anag: an.data, dati: dp.data, op: op.data, periodi: pr.per[operaio_id] || [], erroreP: pr.errore };
 }
 // Tariffe dell'indennità pasto: impostazioni dell'App Cantieri (sola lettura). Nessun valore scritto qui.
 async function leggiTariffePasti() {
@@ -675,15 +737,17 @@ async function calcolaMese() {
     const ids = dipendenti.map(o => o.id);
 
     const { start, end } = meseRange(anno, mese);
-    const [rPer, rAn, rDp, rGio] = await Promise.all([
+    const [rPer, rAn, rDp, rGio, rPr] = await Promise.all([
       sb.from("tm_paghe_periodo").select("id,operaio_id,stato").eq("anno", anno).eq("mese", mese).in("operaio_id", ids),
       sb.from("tm_paghe_anagrafica").select("operaio_id,tipo_salario,tariffa,percentuale_occupazione").in("operaio_id", ids),
       sb.from("operai_dati_personali").select("operaio_id,data_nascita,permesso_tipo").in("operaio_id", ids),
-      sb.from("giornate").select("operaio_id,data,ore_totali,ore_straordinari,pasto_riconosciuto").in("operaio_id", ids).gte("data", start).lte("data", end)
+      sb.from("giornate").select("operaio_id,data,ore_totali,ore_straordinari,pasto_riconosciuto").in("operaio_id", ids).gte("data", start).lte("data", end),
+      leggiPeriodiRapporto(ids)
     ]);
     for (const r of [rPer, rAn, rDp, rGio]) if (r.error) throw r.error;
+    const periodiDi = (id) => rPr.per[id] || [];
     const conDati = new Set([...(rPer.data || []), ...(rGio.data || [])].map(x => x.operaio_id));
-    const tutti = dipendenti.filter(o => presenteNelMese(o, anno, mese, conDati.has(o.id)));
+    const tutti = dipendenti.filter(o => presenteNelMese(o, anno, mese, conDati.has(o.id), periodiDi(o.id)));
     const usciti = dipendenti.length - tutti.length;
     const ops = tutti.filter(o => o.agenzia !== true);       // buste nostre
     const agenz = tutti.filter(o => o.agenzia === true);     // busta fatta dall'agenzia
@@ -726,11 +790,14 @@ async function calcolaMese() {
       }
       const c = calcolaCosto({ anno, mese, voci: vv, tipo_salario: an ? an.tipo_salario : null, tariffa: an ? an.tariffa : null,
         occupazione: an ? an.percentuale_occupazione : null, data_nascita: dp ? dp.data_nascita : null,
-        ruolo: o.ruolo, data_assunzione: o.data_assunzione }, P);
+        ruolo: o.ruolo, data_assunzione: o.data_assunzione, data_fine_rapporto: o.data_fine_rapporto, periodi: periodiDi(o.id) }, P);
       if (!an) { c.completo = false; c.avvisi.unshift({ testo: "Anagrafica paghe mancante (tipo di salario e tariffa).", tipo: "err" }); }
       c.avvisi.unshift(...extra);
-      const fuori = uscitoPrimaDelMese(o, anno, mese);   // qui solo se ha un periodo o ore in questo mese
-      if (fuori) c.avvisi.unshift({ testo: `Ultimo giorno ${dataCH(fineRapporto(o))}, ma in questo mese c'è ${p ? "un periodo" : "ore dal Cantiere"}: controlla. Il costo è contato.`, tipo: "err" });
+      // qui fuori rapporto solo se ha un periodo o ore in questo mese
+      const dopoFine = uscitoPrimaDelMese(o, anno, mese);
+      const nelBuco = !dopoFine && periodiDi(o.id).length > 0 && !nelRapporto(o, periodiDi(o.id), anno, mese);
+      const fuori = dopoFine || nelBuco;
+      if (fuori) c.avvisi.unshift({ testo: `${dopoFine ? "Ultimo giorno " + dataCH(fineRapporto(o)) + ", ma in questo mese" : "In questo mese era fuori rapporto, ma"} ${p ? "c'è un periodo" : "ci sono ore dal Cantiere"}: controlla. Il costo è contato.`, tipo: "err" });
       return { o, c, origine, fuori, permesso: dp ? dp.permesso_tipo : null };
     });
 
@@ -749,7 +816,8 @@ async function calcolaMese() {
       ${daVer ? `<div style="margin-top:6px">${VERIF} <span class="muted">alcune percentuali</span></div>` : ""}
       ${incompleti ? `<div class="msg err">⚠️ ${incompleti} dipendente/i con stima INCOMPLETA: apri il nome per vedere cosa manca.</div>` : ""}
       ${sottoMin ? `<div class="msg err">⚠️ ${sottoMin} dipendente/i sotto il minimo CCL: apri il nome.</div>` : ""}
-      ${dopoFine ? `<div class="msg err">⚠️ ${dopoFine} con periodo o ore dopo l'ultimo giorno di lavoro: apri il nome.</div>` : ""}
+      ${dopoFine ? `<div class="msg err">⚠️ ${dopoFine} con periodo o ore fuori dal rapporto di lavoro: apri il nome.</div>` : ""}
+      ${rPr.errore ? `<div class="msg info">ℹ️ ${esc(AVVISO_PERIODI)}</div>` : ""}
       ${usciti ? `<div class="muted" style="margin-top:6px">🗄️ ${usciti} ${usciti === 1 ? "uscito" : "usciti"} prima di questo mese: non ${usciti === 1 ? "contato" : "contati"}.</div>` : ""}
     </div>`;
     $("costoPersone").innerHTML = risultati.length ? risultati.map(r => `
@@ -1051,6 +1119,7 @@ async function renderPeriodo() {
   $("btnStato").textContent = chiuso ? "🔓 Riapri periodo" : "🔒 Chiudi periodo";
   const bloccato = chiuso || !!periodoArchivio;
   $("btnStato").classList.toggle("hidden", !!periodoArchivio);
+  $("avvisoChiusura").innerHTML = "";
   $("periodoArchivio").innerHTML = (periodoArchivio || periodoNota) ? `<div class="msg info">🗄️ ${esc(periodoArchivio || periodoNota)}</div>` : "";
   $("addBox").style.display = bloccato ? "none" : "block";
   $("importBar").style.display = bloccato ? "none" : "block";
@@ -1102,7 +1171,9 @@ async function renderCostoPeriodo() {
     const c = calcolaCosto({ anno: periodo.anno, mese: periodo.mese, voci, tipo_salario: pers.anag ? pers.anag.tipo_salario : null,
                              tariffa: pers.anag ? pers.anag.tariffa : null, occupazione: pers.anag ? pers.anag.percentuale_occupazione : null,
                              data_nascita: pers.dati ? pers.dati.data_nascita : null,
-                             ruolo: pers.op ? pers.op.ruolo : null, data_assunzione: pers.op ? pers.op.data_assunzione : null }, P);
+                             ruolo: pers.op ? pers.op.ruolo : null, data_assunzione: pers.op ? pers.op.data_assunzione : null,
+                             data_fine_rapporto: pers.op ? pers.op.data_fine_rapporto : null, periodi: pers.periodi }, P);
+    if (pers.erroreP) c.avvisi.push({ testo: AVVISO_PERIODI, tipo: "info" });
     if (!pers.anag) { c.completo = false; c.avvisi.unshift({ testo: "Anagrafica paghe mancante (tipo di salario e tariffa).", tipo: "err" }); }
     box.innerHTML = `<details class="persona" open><summary><span class="nome">💼 Costo per la ditta (stima)</span><span class="cifra">${fmt(c.costo)}</span></summary><div class="corpo">${htmlCosto(c)}</div></details>`;
   } catch (e) {
@@ -1233,11 +1304,40 @@ async function importaOreCantiere() {
 }
 
 // ---- STATO PERIODO ----
-async function toggleStato() {
+// Giornata incompleta = senza orari in Cantieri (stessa regola dell'App Cantieri): conta 0 ore in busta.
+// La timbratura in corso (cantiere_da_assegnare) non ha ancora gli orari per sua natura: non è incompleta.
+function giornataIncompleta(g) { return !!g && g.cantiere_da_assegnare !== true && (!g.ora_inizio || !g.ora_fine); }
+
+// Prima di chiudere: testo dell'avviso, o null se non c'è niente da dire. Mai un blocco.
+async function avvisoGiornateIncomplete(p) {
+  const { start, end } = meseRange(p.anno, p.mese);
+  const { data, error } = await sb.from("giornate").select("data,ora_inizio,ora_fine,cantiere_da_assegnare")
+    .eq("operaio_id", p.operaio_id).gte("data", start).lte("data", end).order("data");
+  if (error) return `Giornate di ${MESI[p.mese - 1]} ${p.anno} NON controllate: ${error.message}.`;
+  const inc = (data || []).filter(giornataIncompleta);
+  if (!inc.length) return null;
+  const date = [...new Set(inc.map(g => dataCH(String(g.data).slice(0, 10))))].join(", ");
+  return `${inc.length === 1 ? "1 giornata incompleta" : inc.length + " giornate incomplete"} in ${MESI[p.mese - 1]} ${p.anno}: ${date}. Senza orari in Cantieri contano 0 ore in busta.`;
+}
+function annullaChiusura() { $("avvisoChiusura").innerHTML = ""; }
+
+// conferma = true: «Chiudi lo stesso»
+async function toggleStato(conferma) {
   const nuovo = periodo.stato === "chiuso" ? "aperto" : "chiuso";
   try {
     const no = await motivoNoScrittura(periodo.operaio_id, periodo.anno, periodo.mese);
     if (no) { msg(esc(no), false); return; }
+    if (nuovo === "chiuso" && conferma !== true) {
+      const avviso = await avvisoGiornateIncomplete(periodo);
+      if (avviso) {
+        $("avvisoChiusura").innerHTML = `<div class="msg err">⚠️ ${esc(avviso)}</div>
+          <div class="row">
+            <div><button class="btn danger" style="width:100%" onclick="toggleStato(true)">🔒 Chiudi lo stesso</button></div>
+            <div><button class="btn sec" style="width:100%" onclick="annullaChiusura()">↩️ Annulla</button></div>
+          </div>`;
+        return;
+      }
+    }
     const { data, error } = await sb.from("tm_paghe_periodo")
       .update({ stato: nuovo, chiuso_at: nuovo === "chiuso" ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
       .eq("id", periodo.id).select().single();
