@@ -137,11 +137,11 @@
           </div>
           <div style="max-width:120px">
             <label for="inAnno">Anno</label>
-            <input id="inAnno" type="number" step="1">
+            <input id="inAnno" type="number" step="1" onchange="aggiornaTastoApri()">
           </div>
           <div style="max-width:160px">
             <label for="selMese">Mese</label>
-            <select id="selMese"></select>
+            <select id="selMese" onchange="aggiornaTastoApri()"></select>
           </div>
         </div>
         <div style="margin-top:12px"><button id="btnApri" class="btn" onclick="apriPeriodo()">📂 Apri periodo</button></div>
@@ -212,7 +212,8 @@ const SUPA_KEY = "sb_publishable_Ke7MTQGHPYVXvKInfOrUQQ_Ys6qKJvD";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let periodo = null;   // riga tm_paghe_periodo corrente
-let periodoArchivio = null;   // testo «In archivio dal …» se il periodo aperto è di un ex: solo lettura
+let periodoArchivio = null;   // periodo di un ex in solo lettura: il motivo
+let periodoNota = null;       // periodo di un ex che si può ancora scrivere (ultima busta): la scritta
 let voci = [];        // voci del periodo
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -502,6 +503,20 @@ function uscitoPrimaDelMese(o, anno, mese) {
   const fine = fineRapporto(o);
   return !!fine && fine < `${anno}-${String(mese).padStart(2, "0")}-01`;
 }
+// Un ex si può ancora scrivere fino al mese della fine rapporto compreso: l'ultima busta si fa dopo l'uscita.
+// Ritorna il motivo per cui quel mese è solo lettura, o null se si può scrivere.
+// attivo = false senza data: non si sa quando è uscito, sempre solo lettura.
+function motivoArchivio(o, anno, mese) {
+  if (!inArchivio(o)) return null;
+  const fine = fineRapporto(o);
+  if (!fine) return `${testoArchivio(o)}, senza data di fine: solo lettura.`;
+  if (uscitoPrimaDelMese(o, anno, mese)) return `${testoArchivio(o)}: ${MESI[mese - 1]} ${anno} è dopo l'ultimo giorno (${dataCH(fine)}), solo lettura.`;
+  return null;
+}
+function ultimoMeseScrivibile(o) {
+  const [a, m] = fineRapporto(o).split("-").map(Number);
+  return `${MESI[m - 1]} ${a}`;
+}
 // Chi conta nel Costo del mese scelto. haDati = ha un periodo o ore in quel mese: i dati non spariscono mai.
 function presenteNelMese(o, anno, mese, haDati) {
   if (haDati) return true;
@@ -701,7 +716,7 @@ async function calcolaMese() {
         if (ore > 0) {
           const imp = an && an.tipo_salario === "orario" && an.tariffa != null ? round2(ore * Number(an.tariffa)) : null;
           vv.push({ tipo: "ore_ordinarie", importo: imp });
-          extra.push({ testo: `${fmt(ore)} ore dal Cantiere${imp == null ? ` (manca la tariffa oraria o il dipendente è mensile: ${inArchivio(o, oggi) ? "è in archivio, il periodo non si apre più" : "apri il periodo"})` : " × tariffa"}.`, tipo: imp == null ? "err" : "info" });
+          extra.push({ testo: `${fmt(ore)} ore dal Cantiere${imp == null ? ` (manca la tariffa oraria o il dipendente è mensile: ${motivoArchivio(o, anno, mese) ? "è in archivio, solo lettura" : inArchivio(o, oggi) ? "apri il periodo da «Mostra archivio»" : "apri il periodo"})` : " × tariffa"}.`, tipo: imp == null ? "err" : "info" });
         }
         if (pasti > 0) {
           const tar = tariffaPasto(o.ruolo, TP);
@@ -901,9 +916,11 @@ function disegnaElenco() {
 }
 
 function cambiaArchivio() {
+  if (archivioVisibile && (periodoArchivio || periodoNota) && voceNonSalvata() &&
+      !confirm("Hai scritto una voce che non hai ancora aggiunto. Se esci la perdi. Uscire lo stesso?")) return;
   archivioVisibile = !archivioVisibile;
-  if (!archivioVisibile && periodoArchivio) {          // si nasconde l'archivio: si esce anche dal periodo dell'ex
-    periodo = null; periodoArchivio = null; voci = [];
+  if (!archivioVisibile && (periodoArchivio || periodoNota)) {   // si nasconde l'archivio: si esce anche dal periodo dell'ex
+    periodo = null; periodoArchivio = null; periodoNota = null; voci = [];
     vaiA("registra", null);
   }
   disegnaElenco();
@@ -912,18 +929,39 @@ function cambiaArchivio() {
   else cambioPersona();
 }
 
-// Persona scelta nell'elenco: se è in archivio, scritta e periodi salvati (solo da leggere)
+// Il tasto dice cosa succede per la persona e il mese scelti
+function aggiornaTastoApri() {
+  const o = elencoArchivio.find(x => x.id === $("selOperaio").value);
+  const anno = parseInt($("inAnno").value, 10), mese = parseInt($("selMese").value, 10);
+  const leggi = o && (o.agenzia === true || !anno || !mese || motivoArchivio(o, anno, mese));
+  $("btnApri").textContent = leggi ? "👁️ Guarda il periodo (solo lettura)" : "📂 Apri periodo";
+}
+
+// Persona scelta nell'elenco: se è in archivio, scritta, fin dove si può scrivere e periodi salvati
 async function cambioPersona() {
   const id = $("selOperaio").value;
   const o = elencoArchivio.find(x => x.id === id);
-  $("btnApri").textContent = o ? "👁️ Guarda il periodo (solo lettura)" : "📂 Apri periodo";
   const box = $("infoArchivio");
-  if (!o) { box.innerHTML = ""; return; }
+  if (!o) { aggiornaTastoApri(); box.innerHTML = ""; return; }
+  // l'ex si apre sul mese della sua ultima busta
+  const fine = fineRapporto(o);
+  if (fine) { $("inAnno").value = Number(fine.slice(0, 4)); $("selMese").value = Number(fine.slice(5, 7)); }
+  aggiornaTastoApri();
   box.innerHTML = `<div>${badgeArchivio(o)}</div><div class="muted">Carico i periodi…</div>`;
+  await aggiornaListaPeriodi();
+}
+async function aggiornaListaPeriodi() {
+  const id = $("selOperaio").value;
+  const o = elencoArchivio.find(x => x.id === id);
+  const box = $("infoArchivio");
+  if (!o) return;
+  const fine = fineRapporto(o);
   const { data, error } = await sb.from("tm_paghe_periodo").select("anno,mese,stato").eq("operaio_id", id)
     .order("anno", { ascending: false }).order("mese", { ascending: false });
   if ($("selOperaio").value !== id) return;           // nel frattempo è stata scelta un'altra persona
-  const testa = `<div>${badgeArchivio(o)}</div><div class="muted" style="margin-top:4px">Solo lettura: ore, buste e documenti restano come sono.</div>`;
+  const regola = o.agenzia === true ? "La busta la fa l'agenzia: solo lettura." : !fine ? "Senza data di fine: solo lettura."
+    : `Ultima busta: si può scrivere fino a ${ultimoMeseScrivibile(o)}. Dopo: solo lettura.`;
+  const testa = `<div>${badgeArchivio(o)}</div><div class="muted" style="margin-top:4px">${esc(regola)} Lo storico resta.</div>`;
   if (error) { box.innerHTML = testa + `<div class="msg err">Errore nel leggere i periodi: ${esc(error.message)}</div>`; return; }
   if (!data || !data.length) { box.innerHTML = testa + `<div class="msg info">Nessun periodo salvato per questa persona.</div>`; return; }
   box.innerHTML = testa + `<div class="lista-periodi">` + data.map(p =>
@@ -949,11 +987,10 @@ async function verificaDipendente(operaio_id) {
 }
 // Prima di ogni scrittura si rilegge la persona (può essere uscita mentre la pagina era aperta).
 // Ritorna il motivo per cui non si può scrivere, o null se si può.
-async function motivoNoScrittura(operaio_id) {
+async function motivoNoScrittura(operaio_id, anno, mese) {
   const st = await leggiStatoPersona(operaio_id);
   if (st.rapporto !== "dipendente" || st.agenzia === true) return "Persona non Dipendente: nessuna riga paga.";
-  if (inArchivio(st)) return `${testoArchivio(st)}: solo lettura, lo storico non si cambia.`;
-  return null;
+  return motivoArchivio(st, anno, mese);
 }
 
 // ---- PERIODO ----
@@ -964,12 +1001,12 @@ async function apriPeriodo() {
   if (!operaio_id || !anno || !mese) { alert("Seleziona dipendente, anno e mese."); return; }
   try {
     const st = await leggiStatoPersona(operaio_id);
-    if (st.rapporto === "dipendente" && inArchivio(st)) { await guardaPeriodoArchivio(st, anno, mese); return; }
+    if (st.rapporto === "dipendente" && inArchivio(st)) { await apriPeriodoArchivio(st, anno, mese); return; }
     if (st.rapporto !== "dipendente" || st.agenzia === true) {
       alert("Questa persona non ha una busta paga nostra: per gli Esterni non esiste busta paga, per chi è in agenzia la fa l'agenzia.");
       return;
     }
-    periodoArchivio = null;
+    periodoArchivio = null; periodoNota = null;
     const { data, error } = await sb.from("tm_paghe_periodo")
       .upsert({ operaio_id, anno, mese }, { onConflict: "operaio_id,anno,mese" })
       .select().single();
@@ -982,18 +1019,25 @@ async function apriPeriodo() {
   }
 }
 
-// Periodo di un ex: si legge e basta. Nessuna riga nuova, nessun import di ore.
-async function guardaPeriodoArchivio(st, anno, mese) {
-  const { data, error } = await sb.from("tm_paghe_periodo").select("*")
+// Periodo di un ex. Dentro il limite si scrive; fuori si legge e basta.
+// Un periodo che esiste già non si tocca all'apertura: guardarlo non cambia niente.
+async function apriPeriodoArchivio(st, anno, mese) {
+  const motivo = st.agenzia === true ? `${testoArchivio(st)}: la busta la fa l'agenzia, solo lettura.` : motivoArchivio(st, anno, mese);
+  const { data: esiste, error } = await sb.from("tm_paghe_periodo").select("*")
     .eq("operaio_id", st.id).eq("anno", anno).eq("mese", mese).maybeSingle();
   if (error) throw error;
-  if (!data) {
-    alert(`${testoArchivio(st)}. Nessun periodo per ${MESI[mese - 1]} ${anno}: in archivio non se ne crea uno nuovo.`);
-    return;
+  let riga = esiste;
+  if (!riga) {
+    if (motivo) { alert(`${motivo} Nessun periodo in quel mese: non se ne crea uno nuovo.`); return; }
+    const nuovo = await sb.from("tm_paghe_periodo").insert({ operaio_id: st.id, anno, mese }).select().single();
+    if (nuovo.error) throw nuovo.error;
+    riga = nuovo.data;
   }
-  periodo = data;
-  periodoArchivio = testoArchivio(st);
+  periodo = riga;
+  periodoArchivio = motivo;
+  periodoNota = motivo ? null : `${testoArchivio(st)}. Ultima busta: si può scrivere fino a ${ultimoMeseScrivibile(st)}.`;
   await renderPeriodo();
+  if (!esiste) await aggiornaListaPeriodi();
   vaiA("registra", "periodo");
 }
 
@@ -1007,14 +1051,15 @@ async function renderPeriodo() {
   $("btnStato").textContent = chiuso ? "🔓 Riapri periodo" : "🔒 Chiudi periodo";
   const bloccato = chiuso || !!periodoArchivio;
   $("btnStato").classList.toggle("hidden", !!periodoArchivio);
-  $("periodoArchivio").innerHTML = periodoArchivio ? `<div class="msg info">🗄️ ${esc(periodoArchivio)}. Solo lettura: niente si cambia.</div>` : "";
+  $("periodoArchivio").innerHTML = (periodoArchivio || periodoNota) ? `<div class="msg info">🗄️ ${esc(periodoArchivio || periodoNota)}</div>` : "";
   $("addBox").style.display = bloccato ? "none" : "block";
   $("importBar").style.display = bloccato ? "none" : "block";
   $("importInfo").textContent = "";
   await loadVoci();
   // Import automatico alla prima apertura: se il periodo è aperto e non esiste
   // già la voce "ore da Cantiere", carica le ore da solo (senza sovrascrivere modifiche).
-  if (!bloccato && !voci.some(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere")) {
+  // Per un ex solo se il periodo è vuoto: aprirlo per guardare non deve cambiare i soldi.
+  if (!bloccato && !voci.some(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere") && (!periodoNota || !voci.length)) {
     await importaOreCantiere();
   }
 }
@@ -1072,7 +1117,7 @@ function labelTipo(t) {
 
 async function addVoce() {
   try {
-    const no = await motivoNoScrittura(periodo.operaio_id);
+    const no = await motivoNoScrittura(periodo.operaio_id, periodo.anno, periodo.mese);
     if (no) { msg(esc(no), false); return; }
   } catch (e) { msg(erroreRapporto(e) || ("Errore nel controllo del rapporto: " + esc(e.message || e)), false); return; }
   const row = {
@@ -1097,7 +1142,7 @@ async function addVoce() {
 async function deleteVoce(id) {
   if (!confirm("Togliere questa voce?")) return;
   try {
-    const no = await motivoNoScrittura(periodo.operaio_id);
+    const no = await motivoNoScrittura(periodo.operaio_id, periodo.anno, periodo.mese);
     if (no) { msg(esc(no), false); return; }
     const { error } = await sb.from("tm_paghe_voce").delete().eq("id", id);
     if (error) throw error;
@@ -1118,7 +1163,7 @@ function meseRange(anno, mese) {
 async function importaOreCantiere() {
   $("importInfo").textContent = "Importazione…";
   try {
-    const no = await motivoNoScrittura(periodo.operaio_id);
+    const no = await motivoNoScrittura(periodo.operaio_id, periodo.anno, periodo.mese);
     if (no) {
       $("importInfo").textContent = "";
       msg(esc(no), false);
@@ -1191,7 +1236,7 @@ async function importaOreCantiere() {
 async function toggleStato() {
   const nuovo = periodo.stato === "chiuso" ? "aperto" : "chiuso";
   try {
-    const no = await motivoNoScrittura(periodo.operaio_id);
+    const no = await motivoNoScrittura(periodo.operaio_id, periodo.anno, periodo.mese);
     if (no) { msg(esc(no), false); return; }
     const { data, error } = await sb.from("tm_paghe_periodo")
       .update({ stato: nuovo, chiuso_at: nuovo === "chiuso" ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
@@ -1199,6 +1244,7 @@ async function toggleStato() {
     if (error) throw error;
     periodo = data;
     await renderPeriodo();
+    if (periodoNota) await aggiornaListaPeriodi();
   } catch (e) {
     msg("Errore nel cambiare stato: " + esc(e.message || e), false);
   }
