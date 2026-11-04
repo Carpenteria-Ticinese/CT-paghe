@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paghe · Carpenteria Ticinese</title>
 <meta name="theme-color" content="#e0a800">
-<link rel="manifest" href="manifest.json?v=4">
-<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=4">
-<link rel="apple-touch-icon" href="icone/icona-180.png?v=4">
+<link rel="manifest" href="manifest.json?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=5">
+<link rel="apple-touch-icon" href="icone/icona-180.png?v=5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Paghe">
@@ -42,6 +42,9 @@
   .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:13px; font-weight:700; }
   .badge.aperto { background:var(--verde-ch); color:var(--verde); }
   .badge.chiuso { background:var(--rosso-ch); color:var(--rosso); }
+  .badge.archivio { background:#e3e7ec; color:#2c3844; white-space:normal; }
+  .lista-periodi { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .lista-periodi .btn { width:100%; text-align:left; }
   .tot { font-size:21px; font-weight:800; }
   .muted { color:var(--muted); font-size:14px; }
   .hidden { display:none !important; }
@@ -79,7 +82,7 @@
 <header>
   <h1>
     <span aria-hidden="true">💰</span>
-    Paghe <small>v4 (3.11.2026)</small>
+    Paghe <small>v5 (4.11.2026)</small>
   </h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
@@ -129,7 +132,7 @@
         <div class="row">
           <div style="min-width:200px">
             <label for="selOperaio">Dipendente</label>
-            <select id="selOperaio"></select>
+            <select id="selOperaio" onchange="cambioPersona()"></select>
             <div id="avvisoOperai" style="margin-top:8px"></div>
           </div>
           <div style="max-width:120px">
@@ -141,7 +144,9 @@
             <select id="selMese"></select>
           </div>
         </div>
-        <div style="margin-top:12px"><button class="btn" onclick="apriPeriodo()">📂 Apri periodo</button></div>
+        <div style="margin-top:12px"><button id="btnApri" class="btn" onclick="apriPeriodo()">📂 Apri periodo</button></div>
+        <div style="margin-top:12px"><button id="btnArchivio" class="btn sec hidden" style="width:100%" aria-pressed="false" onclick="cambiaArchivio()"></button></div>
+        <div id="infoArchivio" style="margin-top:8px"></div>
       </div>
 
       <div id="periodoCard" class="card hidden">
@@ -150,6 +155,7 @@
           <div><strong id="periodoTitolo"></strong> <span id="periodoStato"></span></div>
           <button id="btnStato" class="btn sec" onclick="toggleStato()"></button>
         </div>
+        <div id="periodoArchivio" style="margin-top:8px"></div>
 
         <div id="importBar" style="margin-top:10px">
           <button class="btn sec" onclick="importaOreCantiere()">⟳ Ricarica ore dal Cantiere</button>
@@ -206,6 +212,7 @@ const SUPA_KEY = "sb_publishable_Ke7MTQGHPYVXvKInfOrUQQ_Ys6qKJvD";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let periodo = null;   // riga tm_paghe_periodo corrente
+let periodoArchivio = null;   // testo «In archivio dal …» se il periodo aperto è di un ex: solo lettura
 let voci = [];        // voci del periodo
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -464,6 +471,45 @@ function htmlCosto(c) {
 }
 
 // ======================================================================
+// ARCHIVIO (fine rapporto passata, o scheda con attivo = false: stessa regola di Anagrafiche)
+// L'ultimo giorno di lavoro è ancora attivo. La data è quella svizzera, non UTC.
+// Elenchi di lavoro = secondo OGGI. Costo del mese = secondo il MESE SCELTO.
+// ======================================================================
+function oggiSvizzera(adesso) {
+  const parti = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(adesso || new Date());
+  const v = (t) => parti.find(p => p.type === t).value;
+  return `${v("year")}-${v("month")}-${v("day")}`;
+}
+function fineRapporto(o) { return o && o.data_fine_rapporto ? String(o.data_fine_rapporto).slice(0, 10) : null; }
+function inArchivio(o, oggi) {
+  if (!o) return false;
+  const fine = fineRapporto(o);
+  return o.attivo === false || (!!fine && fine < (oggi || oggiSvizzera()));
+}
+function giornoDopo(iso) {
+  const [a, m, g] = iso.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, g + 1)).toISOString().slice(0, 10);
+}
+function dataCH(iso) { return iso.split("-").reverse().join("."); }
+// «In archivio dal …» = dal giorno dopo l'ultimo giorno. Tolta con attivo = false senza data: niente data.
+function testoArchivio(o, oggi) {
+  const fine = fineRapporto(o);
+  return fine && fine < (oggi || oggiSvizzera()) ? `In archivio dal ${dataCH(giornoDopo(fine))}` : "In archivio";
+}
+function badgeArchivio(o, oggi) { return `<span class="badge archivio">🗄️ ${esc(testoArchivio(o, oggi))}</span>`; }
+// L'ultimo giorno viene prima del mese scelto?
+function uscitoPrimaDelMese(o, anno, mese) {
+  const fine = fineRapporto(o);
+  return !!fine && fine < `${anno}-${String(mese).padStart(2, "0")}-01`;
+}
+// Chi conta nel Costo del mese scelto. haDati = ha un periodo o ore in quel mese: i dati non spariscono mai.
+function presenteNelMese(o, anno, mese, haDati) {
+  if (haDati) return true;
+  if (fineRapporto(o)) return !uscitoPrimaDelMese(o, anno, mese);
+  return o.attivo !== false;
+}
+
+// ======================================================================
 // LETTURE
 // ======================================================================
 function erroreTabella(e) {
@@ -606,13 +652,12 @@ async function calcolaMese() {
     const parRighe = await leggiParametri();
     const P = scegliParametri(parRighe, anno, mese);
 
-    const { data: tutti, error: eo } = await sb.from("operai").select("id,nome,cognome,ruolo,agenzia,nome_agenzia,data_assunzione")
-      .eq("attivo", true).eq("rapporto", "dipendente").order("cognome");
+    // Tutti i Dipendenti, anche gli ex: chi conta si decide sul MESE SCELTO, non su oggi (attivo non basta).
+    const { data: dipendenti, error: eo } = await sb.from("operai").select("id,nome,cognome,ruolo,agenzia,nome_agenzia,data_assunzione,attivo,data_fine_rapporto")
+      .eq("rapporto", "dipendente").order("cognome");
     if (eo) throw new Error(erroreRapporto(eo) || eo.message);
-    if (!tutti || !tutti.length) throw new Error("Nessun dipendente trovato (accesso negato o dati mancanti). Entra con l'account del titolare.");
-    const ops = tutti.filter(o => o.agenzia !== true);       // buste nostre
-    const agenz = tutti.filter(o => o.agenzia === true);     // busta fatta dall'agenzia
-    const ids = tutti.map(o => o.id);
+    if (!dipendenti || !dipendenti.length) throw new Error("Nessun dipendente trovato (accesso negato o dati mancanti). Entra con l'account del titolare.");
+    const ids = dipendenti.map(o => o.id);
 
     const { start, end } = meseRange(anno, mese);
     const [rPer, rAn, rDp, rGio] = await Promise.all([
@@ -622,6 +667,12 @@ async function calcolaMese() {
       sb.from("giornate").select("operaio_id,data,ore_totali,ore_straordinari,pasto_riconosciuto").in("operaio_id", ids).gte("data", start).lte("data", end)
     ]);
     for (const r of [rPer, rAn, rDp, rGio]) if (r.error) throw r.error;
+    const conDati = new Set([...(rPer.data || []), ...(rGio.data || [])].map(x => x.operaio_id));
+    const tutti = dipendenti.filter(o => presenteNelMese(o, anno, mese, conDati.has(o.id)));
+    const usciti = dipendenti.length - tutti.length;
+    const ops = tutti.filter(o => o.agenzia !== true);       // buste nostre
+    const agenz = tutti.filter(o => o.agenzia === true);     // busta fatta dall'agenzia
+    const oggi = oggiSvizzera();
     let TP = null, errPasti = null;
     try { TP = await leggiTariffePasti(); } catch (e) { errPasti = e.message || String(e); }
     const per = rPer.data || [];
@@ -650,7 +701,7 @@ async function calcolaMese() {
         if (ore > 0) {
           const imp = an && an.tipo_salario === "orario" && an.tariffa != null ? round2(ore * Number(an.tariffa)) : null;
           vv.push({ tipo: "ore_ordinarie", importo: imp });
-          extra.push({ testo: `${fmt(ore)} ore dal Cantiere${imp == null ? " (manca la tariffa oraria o il dipendente è mensile: apri il periodo)" : " × tariffa"}.`, tipo: imp == null ? "err" : "info" });
+          extra.push({ testo: `${fmt(ore)} ore dal Cantiere${imp == null ? ` (manca la tariffa oraria o il dipendente è mensile: ${inArchivio(o, oggi) ? "è in archivio, il periodo non si apre più" : "apri il periodo"})` : " × tariffa"}.`, tipo: imp == null ? "err" : "info" });
         }
         if (pasti > 0) {
           const tar = tariffaPasto(o.ruolo, TP);
@@ -663,12 +714,15 @@ async function calcolaMese() {
         ruolo: o.ruolo, data_assunzione: o.data_assunzione }, P);
       if (!an) { c.completo = false; c.avvisi.unshift({ testo: "Anagrafica paghe mancante (tipo di salario e tariffa).", tipo: "err" }); }
       c.avvisi.unshift(...extra);
-      return { o, c, origine, permesso: dp ? dp.permesso_tipo : null };
+      const fuori = uscitoPrimaDelMese(o, anno, mese);   // qui solo se ha un periodo o ore in questo mese
+      if (fuori) c.avvisi.unshift({ testo: `Ultimo giorno ${dataCH(fineRapporto(o))}, ma in questo mese c'è ${p ? "un periodo" : "ore dal Cantiere"}: controlla. Il costo è contato.`, tipo: "err" });
+      return { o, c, origine, fuori, permesso: dp ? dp.permesso_tipo : null };
     });
 
     const T = risultati.reduce((s, r) => ({ lordo: s.lordo + r.c.lordo, ind: s.ind + r.c.indennita, contr: s.contr + r.c.contributi, costo: s.costo + r.c.costo }), { lordo: 0, ind: 0, contr: 0, costo: 0 });
     const incompleti = risultati.filter(r => !r.c.completo).length;
     const sottoMin = risultati.filter(r => r.c.avvisi.some(a => a.sottoMinimo)).length;
+    const dopoFine = risultati.filter(r => r.fuori).length;
     const daVer = risultati.some(r => r.c.righe.some(x => x.stato === "da_verificare") || (r.c.tredicesima && r.c.tredicesima.stato === "da_verificare"));
     $("costoMsg").innerHTML = "";
     $("costoRiepilogo").innerHTML = `<div class="riepilogo">
@@ -680,13 +734,15 @@ async function calcolaMese() {
       ${daVer ? `<div style="margin-top:6px">${VERIF} <span class="muted">alcune percentuali</span></div>` : ""}
       ${incompleti ? `<div class="msg err">⚠️ ${incompleti} dipendente/i con stima INCOMPLETA: apri il nome per vedere cosa manca.</div>` : ""}
       ${sottoMin ? `<div class="msg err">⚠️ ${sottoMin} dipendente/i sotto il minimo CCL: apri il nome.</div>` : ""}
+      ${dopoFine ? `<div class="msg err">⚠️ ${dopoFine} con periodo o ore dopo l'ultimo giorno di lavoro: apri il nome.</div>` : ""}
+      ${usciti ? `<div class="muted" style="margin-top:6px">🗄️ ${usciti} ${usciti === 1 ? "uscito" : "usciti"} prima di questo mese: non ${usciti === 1 ? "contato" : "contati"}.</div>` : ""}
     </div>`;
     $("costoPersone").innerHTML = risultati.length ? risultati.map(r => `
-      <details class="persona"${r.c.completo && !r.c.avvisi.some(a => a.sottoMinimo) ? "" : " open"}>
-        <summary><span><span class="nome">${esc((r.o.cognome || "") + " " + (r.o.nome || ""))}</span><br><span class="muted">${r.c.eta != null ? "età " + r.c.eta : "età ?"}${r.permesso ? " · permesso " + esc(r.permesso) : ""}${r.c.completo ? "" : " · ⚠️ incompleta"}${r.c.avvisi.some(a => a.sottoMinimo) ? " · ⚠️ sotto minimo" : ""}</span></span>
+      <details class="persona"${r.c.completo && !r.fuori && !r.c.avvisi.some(a => a.sottoMinimo) ? "" : " open"}>
+        <summary><span><span class="nome">${esc((r.o.cognome || "") + " " + (r.o.nome || ""))}</span><br><span class="muted">${r.c.eta != null ? "età " + r.c.eta : "età ?"}${r.permesso ? " · permesso " + esc(r.permesso) : ""}${r.c.completo ? "" : " · ⚠️ incompleta"}${r.c.avvisi.some(a => a.sottoMinimo) ? " · ⚠️ sotto minimo" : ""}</span>${inArchivio(r.o, oggi) ? "<br>" + badgeArchivio(r.o, oggi) : ""}</span>
           <span class="cifra">${fmt(r.c.costo)}</span></summary>
         <div class="corpo"><div class="muted">${esc(r.origine)}</div>${htmlCosto(r.c)}</div>
-      </details>`).join("") : `<div class="msg info">Nessun dipendente con busta nostra: sono tutti in agenzia.</div>`;
+      </details>`).join("") : `<div class="msg info">${agenz.length ? "Nessun dipendente con busta nostra: sono tutti in agenzia." : "Nessun dipendente in questo mese."}</div>`;
     $("costoAgenzia").innerHTML = htmlAgenzia(agenz, gioDi, TP, errPasti, mese, anno);
     $("costoParametri").innerHTML = htmlParametri(P);
   } catch (e) {
@@ -713,6 +769,7 @@ function htmlAgenzia(agenz, gioDi, TP, errPasti, mese, anno) {
     const r = riepilogoAgenzia(gioDi(o.id), o.ruolo, TP);
     h += `<div class="persona" style="padding:10px 14px">
       <div class="nome" style="font-weight:700">${esc((o.cognome || "") + " " + (o.nome || ""))}</div>
+      ${inArchivio(o) ? `<div>${badgeArchivio(o)}</div>` : ""}
       <div class="muted">${o.nome_agenzia ? "Agenzia: " + esc(o.nome_agenzia) : "⚠️ nome dell'agenzia non indicato (Anagrafiche)"}</div>
       <div class="riga"><span class="sx">Giorni lavorati</span><span class="dx">${r.giorni}</span></div>
       <div class="riga"><span class="sx">Ore lavorate</span><span class="dx">${fmt(r.ore)} h</span></div>
@@ -790,35 +847,113 @@ function erroreOperai(testo) {
   $("selOperaio").disabled = true;
   $("avvisoOperai").innerHTML = `<div class="msg err">${testo}</div>`;
 }
+let elencoAttivi = [], elencoArchivio = [], nInForza = 0, archivioVisibile = false;
+const nomeOperaio = (o) => `${o.cognome || ""} ${o.nome || ""}`;
+
 async function loadOperai() {
   $("avvisoOperai").innerHTML = "";
   $("selOperaio").disabled = false;
   try {
-    const { data: tutti, error } = await sb.from("operai").select("id,nome,cognome,agenzia")
-      .eq("attivo", true).eq("rapporto", "dipendente").order("cognome");
+    const { data: tutti, error } = await sb.from("operai").select("id,nome,cognome,agenzia,attivo,data_fine_rapporto")
+      .eq("rapporto", "dipendente").order("cognome");
     if (error) throw error;
     if (!tutti || tutti.length === 0) {
       // zero dipendenti non e' un caso normale: errore a schermo, mai un elenco vuoto in silenzio
       erroreOperai("Nessun dipendente trovato. Può essere un problema di accesso (solo il titolare vede Paghe) o i dati mancano. Controlla di essere entrato con l'account giusto.");
       return;
     }
+    const oggi = oggiSvizzera();
+    elencoArchivio = tutti.filter(o => inArchivio(o, oggi));
+    const inForza = tutti.filter(o => !inArchivio(o, oggi));
     // chi è in agenzia non ha una busta nostra (la fa l'agenzia): non si registra qui
-    const data = tutti.filter(o => o.agenzia !== true);
-    if (!data.length) { erroreOperai("Tutti i dipendenti sono in agenzia: la busta la fa l'agenzia. Vedi «Costo del mese» → Agenzia."); return; }
-    $("selOperaio").innerHTML = data.map(o => `<option value="${esc(o.id)}">${esc(o.cognome || "")} ${esc(o.nome || "")}</option>`).join("");
+    elencoAttivi = inForza.filter(o => o.agenzia !== true);
+    nInForza = inForza.length;
+    disegnaElenco();
+    cambioPersona();
   } catch (e) {
     erroreOperai(erroreRapporto(e) || ("Errore nel caricare le persone: " + esc(e.message || e)));
   }
 }
 
+// Disegna l'elenco: attivi; con «Mostra archivio» anche gli ex, in un gruppo a parte con la scritta.
+function disegnaElenco() {
+  const oggi = oggiSvizzera();
+  const n = elencoArchivio.length;
+  const b = $("btnArchivio");
+  b.classList.remove("hidden");
+  b.textContent = `🗄️ ${archivioVisibile ? "Nascondi" : "Mostra"} archivio (${n})`;
+  b.setAttribute("aria-pressed", archivioVisibile ? "true" : "false");
+  let opz = elencoAttivi.map(o => `<option value="${esc(o.id)}">${esc(nomeOperaio(o))}</option>`).join("");
+  if (archivioVisibile && n) {
+    opz += `<optgroup label="Archivio (${n})">` + elencoArchivio.map(o => `<option value="${esc(o.id)}">${esc(nomeOperaio(o))} · ${esc(testoArchivio(o, oggi))}</option>`).join("") + `</optgroup>`;
+  }
+  $("selOperaio").disabled = false;
+  $("avvisoOperai").innerHTML = "";
+  if (!opz) {
+    $("selOperaio").innerHTML = `<option value="">Nessuno in elenco</option>`;
+    $("selOperaio").disabled = true;
+    $("avvisoOperai").innerHTML = nInForza > 0
+      ? `<div class="msg err">Tutti i dipendenti sono in agenzia: la busta la fa l'agenzia. Vedi «Costo del mese» → Agenzia.</div>`
+      : `<div class="msg info">Nessun dipendente attivo. In archivio: ${n}.</div>`;
+    return;
+  }
+  $("selOperaio").innerHTML = opz;
+}
+
+function cambiaArchivio() {
+  archivioVisibile = !archivioVisibile;
+  if (!archivioVisibile && periodoArchivio) {          // si nasconde l'archivio: si esce anche dal periodo dell'ex
+    periodo = null; periodoArchivio = null; voci = [];
+    vaiA("registra", null);
+  }
+  disegnaElenco();
+  if (archivioVisibile && elencoArchivio.length) $("selOperaio").value = elencoArchivio[0].id;
+  if (archivioVisibile && !elencoArchivio.length) $("infoArchivio").innerHTML = `<div class="msg info">Nessuno in archivio.</div>`;
+  else cambioPersona();
+}
+
+// Persona scelta nell'elenco: se è in archivio, scritta e periodi salvati (solo da leggere)
+async function cambioPersona() {
+  const id = $("selOperaio").value;
+  const o = elencoArchivio.find(x => x.id === id);
+  $("btnApri").textContent = o ? "👁️ Guarda il periodo (solo lettura)" : "📂 Apri periodo";
+  const box = $("infoArchivio");
+  if (!o) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div>${badgeArchivio(o)}</div><div class="muted">Carico i periodi…</div>`;
+  const { data, error } = await sb.from("tm_paghe_periodo").select("anno,mese,stato").eq("operaio_id", id)
+    .order("anno", { ascending: false }).order("mese", { ascending: false });
+  if ($("selOperaio").value !== id) return;           // nel frattempo è stata scelta un'altra persona
+  const testa = `<div>${badgeArchivio(o)}</div><div class="muted" style="margin-top:4px">Solo lettura: ore, buste e documenti restano come sono.</div>`;
+  if (error) { box.innerHTML = testa + `<div class="msg err">Errore nel leggere i periodi: ${esc(error.message)}</div>`; return; }
+  if (!data || !data.length) { box.innerHTML = testa + `<div class="msg info">Nessun periodo salvato per questa persona.</div>`; return; }
+  box.innerHTML = testa + `<div class="lista-periodi">` + data.map(p =>
+    `<button class="btn sec" onclick="guardaPeriodo(${Number(p.anno)},${Number(p.mese)})">${p.stato === "chiuso" ? "🔒" : "✏️"} ${MESI[p.mese - 1]} ${Number(p.anno)} · ${p.stato === "chiuso" ? "chiuso" : "aperto"}</button>`).join("") + `</div>`;
+}
+function guardaPeriodo(anno, mese) {
+  $("inAnno").value = anno; $("selMese").value = mese;
+  return apriPeriodo();
+}
+
 // Controllo in piu' (anche se qualcuno apre una scheda per id): la persona deve essere un Dipendente.
 // Ritorna true solo se rapporto = 'dipendente' e NON in agenzia (busta dell'agenzia).
 // Lancia errore se la lettura fallisce o la colonna manca.
-async function verificaDipendente(operaio_id) {
-  const { data, error } = await sb.from("operai").select("id,rapporto,agenzia").eq("id", operaio_id).maybeSingle();
+async function leggiStatoPersona(operaio_id) {
+  const { data, error } = await sb.from("operai").select("id,rapporto,agenzia,attivo,data_fine_rapporto").eq("id", operaio_id).maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Persona non trovata o non accessibile.");
+  return data;
+}
+async function verificaDipendente(operaio_id) {
+  const data = await leggiStatoPersona(operaio_id);
   return data.rapporto === "dipendente" && data.agenzia !== true;
+}
+// Prima di ogni scrittura si rilegge la persona (può essere uscita mentre la pagina era aperta).
+// Ritorna il motivo per cui non si può scrivere, o null se si può.
+async function motivoNoScrittura(operaio_id) {
+  const st = await leggiStatoPersona(operaio_id);
+  if (st.rapporto !== "dipendente" || st.agenzia === true) return "Persona non Dipendente: nessuna riga paga.";
+  if (inArchivio(st)) return `${testoArchivio(st)}: solo lettura, lo storico non si cambia.`;
+  return null;
 }
 
 // ---- PERIODO ----
@@ -828,10 +963,13 @@ async function apriPeriodo() {
   const mese = parseInt($("selMese").value, 10);
   if (!operaio_id || !anno || !mese) { alert("Seleziona dipendente, anno e mese."); return; }
   try {
-    if (!(await verificaDipendente(operaio_id))) {
+    const st = await leggiStatoPersona(operaio_id);
+    if (st.rapporto === "dipendente" && inArchivio(st)) { await guardaPeriodoArchivio(st, anno, mese); return; }
+    if (st.rapporto !== "dipendente" || st.agenzia === true) {
       alert("Questa persona non ha una busta paga nostra: per gli Esterni non esiste busta paga, per chi è in agenzia la fa l'agenzia.");
       return;
     }
+    periodoArchivio = null;
     const { data, error } = await sb.from("tm_paghe_periodo")
       .upsert({ operaio_id, anno, mese }, { onConflict: "operaio_id,anno,mese" })
       .select().single();
@@ -844,6 +982,21 @@ async function apriPeriodo() {
   }
 }
 
+// Periodo di un ex: si legge e basta. Nessuna riga nuova, nessun import di ore.
+async function guardaPeriodoArchivio(st, anno, mese) {
+  const { data, error } = await sb.from("tm_paghe_periodo").select("*")
+    .eq("operaio_id", st.id).eq("anno", anno).eq("mese", mese).maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    alert(`${testoArchivio(st)}. Nessun periodo per ${MESI[mese - 1]} ${anno}: in archivio non se ne crea uno nuovo.`);
+    return;
+  }
+  periodo = data;
+  periodoArchivio = testoArchivio(st);
+  await renderPeriodo();
+  vaiA("registra", "periodo");
+}
+
 async function renderPeriodo() {
   $("periodoCard").classList.remove("hidden");
   msg("");
@@ -852,13 +1005,16 @@ async function renderPeriodo() {
   const chiuso = periodo.stato === "chiuso";
   $("periodoStato").innerHTML = `<span class="badge ${chiuso ? "chiuso" : "aperto"}">${chiuso ? "🔒 CHIUSO" : "✏️ APERTO"}</span>`;
   $("btnStato").textContent = chiuso ? "🔓 Riapri periodo" : "🔒 Chiudi periodo";
-  $("addBox").style.display = chiuso ? "none" : "block";
-  $("importBar").style.display = chiuso ? "none" : "block";
+  const bloccato = chiuso || !!periodoArchivio;
+  $("btnStato").classList.toggle("hidden", !!periodoArchivio);
+  $("periodoArchivio").innerHTML = periodoArchivio ? `<div class="msg info">🗄️ ${esc(periodoArchivio)}. Solo lettura: niente si cambia.</div>` : "";
+  $("addBox").style.display = bloccato ? "none" : "block";
+  $("importBar").style.display = bloccato ? "none" : "block";
   $("importInfo").textContent = "";
   await loadVoci();
   // Import automatico alla prima apertura: se il periodo è aperto e non esiste
   // già la voce "ore da Cantiere", carica le ore da solo (senza sovrascrivere modifiche).
-  if (!chiuso && !voci.some(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere")) {
+  if (!bloccato && !voci.some(v => v.tipo === "ore_ordinarie" && v.origine === "cantiere")) {
     await importaOreCantiere();
   }
 }
@@ -877,7 +1033,7 @@ async function loadVoci() {
 }
 
 function renderVoci() {
-  const chiuso = periodo.stato === "chiuso";
+  const chiuso = periodo.stato === "chiuso" || !!periodoArchivio;
   $("vociBody").innerHTML = voci.length ? voci.map(v => `
     <tr>
       <td><b>${esc(labelTipo(v.tipo))}</b></td>
@@ -916,7 +1072,8 @@ function labelTipo(t) {
 
 async function addVoce() {
   try {
-    if (!(await verificaDipendente(periodo.operaio_id))) { msg("Persona non Dipendente: nessuna riga paga.", false); return; }
+    const no = await motivoNoScrittura(periodo.operaio_id);
+    if (no) { msg(esc(no), false); return; }
   } catch (e) { msg(erroreRapporto(e) || ("Errore nel controllo del rapporto: " + esc(e.message || e)), false); return; }
   const row = {
     periodo_id: periodo.id,
@@ -940,6 +1097,8 @@ async function addVoce() {
 async function deleteVoce(id) {
   if (!confirm("Togliere questa voce?")) return;
   try {
+    const no = await motivoNoScrittura(periodo.operaio_id);
+    if (no) { msg(esc(no), false); return; }
     const { error } = await sb.from("tm_paghe_voce").delete().eq("id", id);
     if (error) throw error;
     await loadVoci();
@@ -959,9 +1118,10 @@ function meseRange(anno, mese) {
 async function importaOreCantiere() {
   $("importInfo").textContent = "Importazione…";
   try {
-    if (!(await verificaDipendente(periodo.operaio_id))) {
+    const no = await motivoNoScrittura(periodo.operaio_id);
+    if (no) {
       $("importInfo").textContent = "";
-      msg("Persona non Dipendente: nessuna riga paga.", false);
+      msg(esc(no), false);
       return;
     }
     const { start, end } = meseRange(periodo.anno, periodo.mese);
@@ -1031,6 +1191,8 @@ async function importaOreCantiere() {
 async function toggleStato() {
   const nuovo = periodo.stato === "chiuso" ? "aperto" : "chiuso";
   try {
+    const no = await motivoNoScrittura(periodo.operaio_id);
+    if (no) { msg(esc(no), false); return; }
     const { data, error } = await sb.from("tm_paghe_periodo")
       .update({ stato: nuovo, chiuso_at: nuovo === "chiuso" ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
       .eq("id", periodo.id).select().single();
