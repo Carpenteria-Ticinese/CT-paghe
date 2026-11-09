@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paghe · Carpenteria Ticinese</title>
 <meta name="theme-color" content="#e0a800">
-<link rel="manifest" href="manifest.json?v=6">
-<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=6">
-<link rel="apple-touch-icon" href="icone/icona-180.png?v=6">
+<link rel="manifest" href="manifest.json?v=7">
+<link rel="icon" type="image/png" sizes="32x32" href="icone/icona-32.png?v=7">
+<link rel="apple-touch-icon" href="icone/icona-180.png?v=7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Paghe">
@@ -15,7 +15,9 @@
   :root { --acc:#e0a800; --acc-txt:#1c1c1c; --acc-scuro:#7a5200; --acc-ch:#fff4d6; --bg:#f4f6f8; --bord:#cfd5dc; --txt:#1c2733; --muted:#55606b;
           --rosso:#b42318; --rosso-ch:#fdecea; --verde:#1e7d34; --verde-ch:#e7f5ea; --giallo-ch:#fff4d6; --giallo:#7a5200; }
   * { box-sizing:border-box; }
-  html, body { overflow-x:hidden; }
+  /* v7: «clip» al posto di «hidden» dove il browser lo conosce: niente scorrimento di lato come prima, ma la fascia
+     «🔄 Nuova versione» (aggiorna.js, position:sticky) resta in cima quando si scorre. Browser vecchi: «hidden» come prima. */
+  html, body { overflow-x:hidden; overflow-x:clip; }
   body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--txt); font-size:17px; line-height:1.4; }
   header { background:var(--acc); color:var(--acc-txt); padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
   header h1 { font-size:20px; margin:0; display:flex; align-items:center; gap:8px; }
@@ -68,6 +70,16 @@
   .riga .det { display:block; color:var(--muted); font-size:14px; }
   .riga.totale { border-bottom:none; border-top:2px solid var(--txt); font-weight:800; font-size:18px; }
   .sottotitolo { margin:10px 0 2px; font-weight:700; color:var(--acc-scuro); font-size:15px; }
+  /* v7: finestra «Hai dati non salvati» (sezione «Nuova versione» nello script). Parte sotto la fascia di aggiorna.js:
+     --ct-agg-h = altezza della fascia (0 se non c'è). */
+  .agg-sfondo { position:fixed; left:0; right:0; bottom:0; top:var(--ct-agg-h, 0px); z-index:1000; background:rgba(20,24,31,.55);
+                display:flex; align-items:center; justify-content:center; padding:16px; overflow-y:auto; }
+  .agg-finestra { background:#fff; border-radius:12px; border:3px solid var(--acc); max-width:460px; width:100%; padding:18px 16px;
+                  box-shadow:0 8px 30px rgba(0,0,0,.35); }
+  .agg-finestra h2 { margin:0 0 8px; font-size:21px; color:var(--rosso); }
+  .agg-finestra p { margin:0 0 12px; font-size:17px; }
+  .agg-finestra .tasti { display:flex; flex-wrap:wrap; gap:10px; }
+  .agg-finestra .tasti .btn { flex:1 1 170px; min-height:56px; font-size:18px; }
   @media (max-width:560px) {
     #tabVoci thead { display:none; }
     #tabVoci, #tabVoci tbody, #tabVoci tr, #tabVoci td { display:block; width:100%; }
@@ -82,7 +94,7 @@
 <header>
   <h1>
     <span aria-hidden="true">💰</span>
-    Paghe <small>v6 (4.11.2026)</small>
+    Paghe <small>v7 (10.11.2026)</small>
   </h1>
   <button id="btnLogout" class="hidden" onclick="logout()">Esci</button>
 </header>
@@ -709,7 +721,62 @@ window.addEventListener("popstate", (ev) => {
   navInCorso = true;
   try { applicaVista(st.s, st.v || null); } finally { navInCorso = false; }
 });
-window.addEventListener("beforeunload", (e) => { if (voceNonSalvata()) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", (e) => { if (AGG.esce) return; if (voceNonSalvata()) { e.preventDefault(); e.returnValue = ""; } });
+
+// ── Nuova versione (v7) ─────────────────────────────────────────────────────
+// Regola di Umberto (9.11.2026): mai versioni vecchie bloccate. aggiorna.js (uguale in tutte le app, NON si modifica)
+// legge versione.json e mostra in alto «🔄 Nuova versione: aggiorna». Qui solo le due cose di Paghe:
+// 1. «Aggiorna» con una voce scritta e non aggiunta (voceNonSalvata) prima apre una finestra dell'app
+//    «Hai dati non salvati: salvali prima.». Avviso, non blocco: «Aggiorna lo stesso» ricarica (la voce si perde,
+//    senza la domanda del browser). «Resta qui» (anche Esc o Invio) chiude e riporta alla voce.
+// 2. L'altezza della fascia va in --ct-agg-h: la finestra parte sotto la fascia. La testata non è fissa:
+//    la fascia (sticky, messa in cima al body da aggiorna.js) la spinge in giù, non la copre.
+const AGG = { lasciaPassare: false, esce: false, box: null };
+function chiudiAvvisoAgg() {
+  if (!AGG.box) return;
+  AGG.box.remove(); AGG.box = null;
+  const v = ["vDesc", "vQta", "vUm", "vImp"].map(id => $(id)).find(i => String(i.value || "").trim() !== "") || $("vDesc");
+  try { v.focus(); } catch (e) {}
+}
+function avvisoAggiorna(tasto) {
+  if (AGG.box) return;                                       // l'avviso è già aperto
+  const s = document.createElement("div");
+  s.className = "agg-sfondo"; s.id = "aggAvviso";
+  s.innerHTML = `<div class="agg-finestra" role="alertdialog" aria-modal="true" aria-labelledby="aggTit" aria-describedby="aggTxt">
+      <h2 id="aggTit">⚠️ Hai dati non salvati: salvali prima.</h2>
+      <p id="aggTxt">C'è una voce scritta e non ancora aggiunta. Se aggiorni adesso, la voce si perde.</p>
+      <div class="tasti">
+        <button type="button" class="btn" data-agg-resta>✍️ Resta qui</button>
+        <button type="button" class="btn danger" data-agg-lo-stesso>🔄 Aggiorna lo stesso</button>
+      </div></div>`;
+  document.body.appendChild(s);
+  AGG.box = s;
+  s.querySelector("[data-agg-resta]").addEventListener("click", chiudiAvvisoAgg);
+  s.addEventListener("click", (e) => { if (e.target === s) chiudiAvvisoAgg(); });   // tocco fuori = Resta qui
+  s.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); chiudiAvvisoAgg(); } });
+  s.querySelector("[data-agg-lo-stesso]").addEventListener("click", () => {
+    s.querySelectorAll("button").forEach(b => { b.disabled = true; });
+    s.querySelector("[data-agg-lo-stesso]").textContent = "🔄 Aggiorno…";
+    AGG.lasciaPassare = true; AGG.esce = true;
+    tasto.click();                                           // lo stesso tasto di aggiorna.js: questa volta passa
+  });
+  s.querySelector("[data-agg-resta]").focus();               // Invio = restare, mai perdere la voce per sbaglio
+}
+// Fase di cattura su window: arriva prima del tasto di aggiorna.js. Senza dati non salvati non fa niente.
+window.addEventListener("click", (e) => {
+  const tasto = e.target && e.target.closest ? e.target.closest("#ct-aggiorna-tasto") : null;
+  if (!tasto) return;
+  if (AGG.lasciaPassare) { AGG.lasciaPassare = false; return; }
+  if ($("app").classList.contains("hidden") || !voceNonSalvata()) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  avvisoAggiorna(tasto);
+}, true);
+function misuraFasciaAgg() {
+  const b = document.getElementById("ct-aggiorna");
+  document.documentElement.style.setProperty("--ct-agg-h", (b ? b.offsetHeight : 0) + "px");
+}
+if (window.MutationObserver) new MutationObserver(misuraFasciaAgg).observe(document.body, { childList: true });
+window.addEventListener("resize", misuraFasciaAgg);
 // aprire il dettaglio di un dipendente (o dei parametri) con un tocco = un passo nella storia
 document.addEventListener("click", (e) => {
   const sm = e.target && e.target.closest ? e.target.closest("#costoRisultato details.persona > summary") : null;
@@ -1352,5 +1419,9 @@ async function toggleStato(conferma) {
 
 checkAuth();
 </script>
+<!-- v7 (Umberto, 9.11.2026): mai versioni vecchie bloccate. aggiorna.js è lo stesso file in tutte le app: NON si modifica.
+     Le due cose di Paghe (avviso dati non salvati, altezza della fascia in --ct-agg-h) sono nello script sopra, «Nuova versione».
+     A ogni versione: stesso numero, più alto, qui (?v= e data-versione), in versione.json, su manifest/icone e nella scritta in testata. -->
+<script src="aggiorna.js?v=7" data-versione="7"></script>
 </body>
 </html>
